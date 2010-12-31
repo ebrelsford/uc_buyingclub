@@ -1,0 +1,92 @@
+<?php
+// $Id$
+
+/**
+ * @file
+ * Install hooks for uc_buyingclub.module.
+ */
+
+/**
+ * Implementation of hook_schema().
+ */
+function uc_buyingclub_schema() {
+  $schema = array();
+
+  $schema['uc_buyingclub_ordering_periods'] = array(
+    'description' => 'Periods of time during which users can place buying club orders.',
+    'fields' => array(
+      'ordering_period_id' => array(
+        'description' => 'Primary key: the ordering period ID.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'start' => array(
+        'description' => 'The Unix timestamp indicating when the ordering period starts.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'end' => array(
+        'description' => 'The Unix timestamp indicating when the ordering period ends.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'primary key' => array('ordering_period_id'),
+  );
+
+  $schema['uc_buyingclub_order_products'] = array(
+    'description' => 'Buying club products associated with orders.',
+    'fields' => array(
+      'uc_buyingclub_order_product_id' => array(
+        'description' => 'Primary key: the order product ID.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'order_product_id' => array(
+        'description' => 'The {uc_order_products}.order_product_id.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'qty' => array(
+        'description' => 'The number of the same product ordered.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'finalized' => array(
+        'description' => 'The Unix timestamp indicating when the order was finalized--when the final order was placed with the distributor.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'order_product_id' => array('order_product_id'),
+    ),
+    'primary key' => array('uc_buyingclub_order_product_id'),
+  );
+
+  return $schema;
+}
+
+/**
+ * Implementation of hook_install().
+ */
+function uc_buyingclub_install() {
+  drupal_install_schema('uc_buyingclub');
+}
+
+/**
+ * Implementation of hook_uninstall().
+ */
+function uc_buyingclub_uninstall() {
+  drupal_uninstall_schema('uc_buyingclub');
+}

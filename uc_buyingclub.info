@@ -1,0 +1,8 @@
+; $Id$
+name = Buying Club
+description = Support for running a buying club with Ubercart
+core = 6.x
+package = Ubercart - extra
+dependencies[] = content
+dependencies[] = uc_order
+dependencies[] = uc_product
