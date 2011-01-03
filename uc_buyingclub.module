@@ -84,15 +84,26 @@ function uc_buyingclub_theme() {
 function uc_buyingclub_mail($key, &$message, $params) {
   $language = $message['language'];
   $variables = user_mail_tokens($params['account'], $language);
+  $buying_club_name = 'Greene Hill Food Coop Buying Club';
 
   switch ($key) {
     case 'final_order':
-      $message['subject'] = t('Finalized Greene Hill Food Coop Buying Club order', $variables, $language->language);
-      $message['body'] = t('Hi !name,\n\nYour Greene Hill Food Coop Buying Club order has been finalized:\n\n', $variables, $language->language);
+      $message['headers'] = array(
+        'MIME-Version' => '1.0',
+        'Content-Type' => 'text/html',
+      );
+      $message['subject'] = t('Finalized '. $buying_club_name .' order', $variables, $language->language);
+
+      $body = '<html><head></head><body>';
+      $body .= t('Hi '. $params['name'] .',<br /><br />', $variables, $language->language);
+      $body .= t('Your '. $buying_club_name .' order has been finalized:<br /><br />', $variables, $language->language);
       foreach ($params['products_given'] as $product => $given) {
-        $message['body'] .= $product . ": wanted " . $params['products_desired'][$product] . ", received " . $params['products_given'][$product] . "---";
+        $body .= $product . ": wanted " . $params['products_desired'][$product] . ", received " . $params['products_given'][$product] . "<br />";
       }
-      $message['body'] .= ".\n\nYour total cost will be $" . $params['total_cost'];
+      $body .= '<br /><br />Your total cost will be $' . $params['total_cost'];
+      $body .= '</body></html>';
+
+      $message['body'] = $body;
       break;
   }
 }
