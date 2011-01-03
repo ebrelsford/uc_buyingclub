@@ -84,7 +84,9 @@ function uc_buyingclub_theme() {
 function uc_buyingclub_mail($key, &$message, $params) {
   $language = $message['language'];
   $variables = user_mail_tokens($params['account'], $language);
-  $buying_club_name = 'Greene Hill Food Coop Buying Club';
+  
+  $store_values = uc_store_token_values('global');
+  $buying_club_name = $store_values['store-name'];
 
   switch ($key) {
     case 'final_order':
