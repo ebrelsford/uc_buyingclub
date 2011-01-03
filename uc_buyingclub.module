@@ -36,6 +36,13 @@ function uc_buyingclub_menu() {
     'page callback' => 'uc_buyingclub_view_finalized_orders',
   );
 
+  $items['buyingclub/view/periods'] = array(
+    'title' => "Buying Club: View ordering periods",
+    'access arguments' => array('administer uc_buyingclub'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_view_ordering_periods',
+  );
+
   return $items;
 }
 
@@ -399,12 +406,43 @@ function uc_buyingclub_view_finalized_orders() {
     }
   }
 
-  dvm($data);
-
   // theme table
   return theme_table(array('Product', 'Quantity Desired', 'Distributor', 'Minimum Order', 'Quantity Ordered',), $data);
 }
 
+/*
+ * view ordering periods
+ */
+
+function uc_buyingclub_view_ordering_periods() {
+  // query
+  $query = "SELECT p.start, p.end ".
+    "FROM {uc_buyingclub_ordering_periods} p ".
+    "WHERE 1 ".
+    "ORDER BY p.start DESC ";
+
+  $query_result = db_query($query);
+
+  // make table
+  $data = array();
+  $date_format = "l\, M jS Y \a\\t ga";
+
+  if ($query_result) {
+    while ($row = db_fetch_array($query_result)) {
+      $data[] = array(
+        'start' => format_date((int)$row['start'], $type='custom', $format=$date_format),
+        'end' => format_date((int)$row['end'], $type='custom', $format=$date_format),
+      );
+    }
+  }
+
+  // theme table
+  return theme_table(array('Start', 'End'), $data);
+}
+
+/*
+ * other useful functions
+ */
 function uc_buyingclub_get_most_recent_ordering_period() {
   $query = "SELECT p.start, p.end ".
     "FROM {uc_buyingclub_ordering_periods} p ".
