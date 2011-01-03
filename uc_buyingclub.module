@@ -29,6 +29,13 @@ function uc_buyingclub_menu() {
     'page arguments' => array('uc_buyingclub_finalization_form'),
   );
 
+  $items['buyingclub/view/finalized'] = array(
+    'title' => "Buying Club: View finalized orders",
+    'access arguments' => array('administer uc_buyingclub'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_view_finalized_orders',
+  );
+
   return $items;
 }
 
@@ -100,15 +107,20 @@ function uc_buyingclub_finalization_form($rows) {
   $minimum_order_table = $minimum_order_db_info['table'];
   $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
 
+  $ordering_period = uc_buyingclub_get_most_recent_ordering_period();
+  $start = $ordering_period->start;
+  $end = $ordering_period->end;
+
   $query = "SELECT p.title AS product_name, p.nid AS product_id, SUM(op.qty) AS order_product_qty, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2 ".
     "WHERE p.type='product' AND d.type='distributor' AND op.order_id=o.order_id AND p.nid=op.nid ".
+      "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
       "AND ctd2.vid=p.vid ".
     "GROUP BY p.nid ".
     "ORDER BY d.title, p.title ";
 
-  $query_result = db_query($query);
+  $query_result = db_query($query, $start, $end);
 
   $form = array();
 
@@ -129,6 +141,16 @@ function uc_buyingclub_finalization_form($rows) {
     }
   }
 
+  $form['start'] = array(
+    '#type' => 'hidden',
+    '#value' => $start,
+  );
+
+  $form['end'] = array(
+    '#type' => 'hidden',
+    '#value' => $end,
+  );
+  
   $form['#attributes'] = array();
 
   $form['submit'] = array(
@@ -199,8 +221,8 @@ function uc_buyingclub_finalization_form_validate($form, &$form_state) {
 function uc_buyingclub_finalization_form_submit($form_id, $form) {
   $form_values = $form['values'];
   $prefix = 'ordered_';
-  $start = '2010-01-01 00:00:00';
-  $end = '2012-01-01 00:00:00';
+  $start = $form_values['start'];
+  $end = $form_values['end'];
 
   // finalize each product submitted with the quantity ordered as indicated
   foreach ($form_values as $key => $value) {
@@ -226,15 +248,15 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
  * @param $qty_ordered
  *    The quantity ordered through the finalization form
  * @param $start
- *    The string representing the start of the ordering period
+ *    The start of the ordering period (in seconds)
  * @param $end
- *    The string representing the end of the ordering period
+ *    The end of the ordering period (in seconds)
  */
 function uc_buyingclub_finalize_product_order($product_id, $qty_ordered, $start, $end) {
   $query = "SELECT op.order_product_id AS id, op.qty AS qty_desired ".
     "FROM {uc_order_products} op, {uc_orders} o ".
     "WHERE op.order_id = o.order_id AND op.nid = %d ".
-    "AND o.created > UNIX_TIMESTAMP('%s') AND o.created < UNIX_TIMESTAMP('%s') ".
+    "AND o.created > %d AND o.created < %d ".
     "ORDER BY o.created";
 
   $query_result = db_query($query, $product_id, $start, $end);
@@ -272,14 +294,14 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_ordered, $start,
  * Finalize orders for all users in the given ordering period.
  *
  * @param $start
- *    The string representing the start of the ordering period
+ *    The start of the ordering period (in seconds)
  * @param $end
- *    The string representing the end of the ordering period
+ *    The end of the ordering period (in seconds)
  */
 function uc_buyingclub_finalize_users($start, $end) {
   $query = "SELECT DISTINCT o.uid AS user_id ".
     "FROM {uc_orders} o ".
-    "WHERE o.created > UNIX_TIMESTAMP('%s') AND o.created < UNIX_TIMESTAMP('%s')";
+    "WHERE o.created > %d AND o.created < %d";
 
   $query_result = db_query($query, $start, $end);
 
@@ -296,14 +318,14 @@ function uc_buyingclub_finalize_users($start, $end) {
  * @param $user_id
  *    The id of the user
  * @param $start
- *    The string representing the start of the ordering period
+ *    The start of the ordering period (in seconds)
  * @param $end
- *    The string representing the end of the ordering period
+ *    The end of the ordering period (in seconds)
  */
 function uc_buyingclub_finalize_user($user_id, $start, $end) {
   $query = "SELECT op.title AS title, op.qty AS qty_desired, bop.qty AS qty_given, op.price AS price ".
     "FROM {uc_orders} o, {uc_order_products} op, {uc_buyingclub_order_products} bop ".
-    "WHERE o.uid=%d AND o.created > UNIX_TIMESTAMP('%s') AND o.created < UNIX_TIMESTAMP('%s') ".
+    "WHERE o.uid=%d AND o.created > %d AND o.created < %d ".
       "AND op.order_id = o.order_id AND bop.order_product_id = op.order_product_id";
 
   $query_result = db_query($query, $user_id, $start, $end);
@@ -337,4 +359,64 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
     );
     drupal_mail('uc_buyingclub', 'final_order', $account->mail, user_preferred_language($account), $params);
   }
+}
+
+/*
+ * view finalized orders (summary)
+ */
+
+function uc_buyingclub_view_finalized_orders() {
+  // find start of most recent ordering period
+  $period = uc_buyingclub_get_most_recent_ordering_period();
+  $start = $period->start;
+  $end = $period->end;
+
+  // query
+  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
+  $distributor_table = $distributor_db_info['table'];
+  $distributor_column = $distributor_db_info['columns']['nid']['column'];
+
+  $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
+  $minimum_order_table = $minimum_order_db_info['table'];
+  $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
+
+  $query = "SELECT p.title AS product_name, SUM(op.qty) AS qty_desired, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order, SUM(bop.qty) AS qty_ordered ".
+    "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2, {uc_buyingclub_order_products} bop ".
+    "WHERE p.type='product' AND p.nid=op.nid AND d.type='distributor' AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
+      "AND o.created > %d AND o.created < %d ".
+      "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid AND ctd2.vid=p.vid ".
+    "GROUP BY p.nid ".
+    "ORDER BY d.title, p.title ";
+
+  $query_result = db_query($query, $start, $end);
+
+  // make table
+  $data = array();
+
+  if ($query_result) {
+    while ($row = db_fetch_array($query_result)) {
+      $data[] = $row;
+    }
+  }
+
+  dvm($data);
+
+  // theme table
+  return theme_table(array('Product', 'Quantity Desired', 'Distributor', 'Minimum Order', 'Quantity Ordered',), $data);
+}
+
+function uc_buyingclub_get_most_recent_ordering_period() {
+  $query = "SELECT p.start, p.end ".
+    "FROM {uc_buyingclub_ordering_periods} p ".
+    "WHERE p.start < %d ".
+    "ORDER BY p.start DESC ".
+    "LIMIT 1";
+
+  $query_result = db_query($query, time());
+
+  if ($query_result) {
+    $period = db_fetch_object($query_result);
+  }
+
+  return $period;
 }
