@@ -33,6 +33,12 @@ function uc_buyingclub_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'pickup' => array(
+        'description' => 'The Unix timestamp indicating when the pickup date is.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
     ),
     'primary key' => array('ordering_period_id'),
   );
