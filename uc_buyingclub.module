@@ -22,7 +22,7 @@ function uc_buyingclub_menu() {
   $items = array();
 
   $items['buyingclub/finalize'] = array(
-    'title' => "Buying Club: Reconcile orders",
+    'title' => "Buying Club: Finalize orders",
     'access arguments' => array('administer uc_buyingclub'),
     'type' => MENU_CALLBACK,
     'page callback' => 'drupal_get_form',
@@ -221,7 +221,13 @@ function theme_uc_buyingclub_finalization_form($form) {
   $header[] = t('Minimum Order');
   $header[] = array('data' => t('Qty to Order'));
 
-  $output = theme('table', $header, $rows);
+  // show which ordering period we're using
+  $start = (int)$form['start']['#value'];
+  $end = (int)$form['end']['#value'];
+  $date_format = "ga l\, M jS Y";
+  $output = 'Orders placed from '. format_date($start, $type='custom', $format=$date_format) .' to '. format_date($end, $type='custom', $format=$date_format);
+
+  $output .= theme('table', $header, $rows);
   $output .= drupal_render($form);
   return $output;
 }
@@ -489,7 +495,7 @@ function uc_buyingclub_view_finalized_orders_by_user() {
 
   if ($query_result) {
     $date_format = "ga l\, M jS Y";
-    $out = 'Orders from '. format_date($start, $type='custom', $format=$date_format) .' to '. format_date($end, $type='custom', $format=$date_format);
+    $out = 'Orders placed from '. format_date($start, $type='custom', $format=$date_format) .' to '. format_date($end, $type='custom', $format=$date_format);
     $out .= '<br /><br />';
 
     $current_member_name = '';
