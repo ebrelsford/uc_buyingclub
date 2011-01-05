@@ -474,15 +474,11 @@ function uc_buyingclub_view_finalized_orders_by_user() {
   $distributor_table = $distributor_db_info['table'];
   $distributor_column = $distributor_db_info['columns']['nid']['column'];
 
-  $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
-  $minimum_order_table = $minimum_order_db_info['table'];
-  $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
-
-  $query = "SELECT o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, ctd2.". $minimum_order_column ." AS minimum_order, SUM(bop.qty) AS qty_ordered ".
-    "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2, {uc_buyingclub_order_products} bop ".
+  $query = "SELECT o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, SUM(bop.qty) AS qty_ordered ".
+    "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {uc_buyingclub_order_products} bop ".
     "WHERE p.type='product' AND p.nid=op.nid AND d.type='distributor' AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
-      "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid AND ctd2.vid=p.vid ".
+      "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
     "GROUP BY o.billing_last_name, o.billing_first_name, p.nid ".
     "ORDER BY o.billing_last_name, o.billing_first_name, d.title, p.title ";
 
@@ -498,7 +494,7 @@ function uc_buyingclub_view_finalized_orders_by_user() {
 
     $current_member_name = '';
     $table = array();
-    $table_headers = array('Product', 'Distributor', 'Quantity Desired', 'Minimum Order', 'Quantity Ordered',);
+    $table_headers = array('Product', 'Distributor', 'Quantity Desired', 'Quantity Ordered',);
     while ($row = db_fetch_array($query_result)) {
       $member_name = $row['member_first_name'] .' '. $row['member_last_name'];
       if ($member_name !== $current_member_name) {
