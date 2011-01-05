@@ -126,6 +126,26 @@ function uc_buyingclub_mail($key, &$message, $params) {
  * Create the finalization table and form.
  */
 function uc_buyingclub_finalization_form($rows) {
+  $ordering_period = uc_buyingclub_get_most_recent_ordering_period();
+  $start = $ordering_period->start;
+  $end = $ordering_period->end;
+
+  // warn user if this ordering period has already been (perhaps partially) finalized or should not yet be finalized
+  $already_finalized_query = "SELECT count(op.order_product_id) AS num ".
+    "FROM {uc_orders} o, {uc_order_products} op, {uc_buyingclub_order_products} bop ".
+    "WHERE op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
+      "AND o.created > %d AND o.created < %d ";
+  $already_finalized_result = db_query($already_finalized_query, $start, $end);
+  if ($already_finalized_result && db_fetch_object($already_finalized_result)->num > 0) {
+    drupal_set_message('Someone has already finalized this ordering period. Please contact an admin if changes need to be made.', $type='error');
+  }
+
+  if (time() < $end) {
+    $date_format = "ga \o\\n l\, M jS Y";
+    drupal_set_message('This ordering period is not over yet. Please wait until '. format_date($end, $type='custom', $format=$date_format) .' to finalize it!', $type='error');
+  }
+
+  // make query
   $distributor_db_info = content_database_info(content_fields('field_distributor')); 
   $distributor_table = $distributor_db_info['table'];
   $distributor_column = $distributor_db_info['columns']['nid']['column'];
@@ -133,10 +153,6 @@ function uc_buyingclub_finalization_form($rows) {
   $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
   $minimum_order_table = $minimum_order_db_info['table'];
   $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
-
-  $ordering_period = uc_buyingclub_get_most_recent_ordering_period();
-  $start = $ordering_period->start;
-  $end = $ordering_period->end;
 
   $query = "SELECT p.title AS product_name, p.nid AS product_id, SUM(op.qty) AS order_product_qty, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2 ".
@@ -146,9 +162,9 @@ function uc_buyingclub_finalization_form($rows) {
       "AND ctd2.vid=p.vid ".
     "GROUP BY p.nid ".
     "ORDER BY d.title, p.title ";
-
   $query_result = db_query($query, $start, $end);
 
+  // build table/form
   $form = array();
 
   if ($query_result) {
@@ -172,19 +188,15 @@ function uc_buyingclub_finalization_form($rows) {
     '#type' => 'hidden',
     '#value' => $start,
   );
-
   $form['end'] = array(
     '#type' => 'hidden',
     '#value' => $end,
   );
   
-  $form['#attributes'] = array();
-
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Submit'),
   );
-
   $form['cancel'] = array(
     '#type' => 'markup',
     '#value' => l(t('Cancel'), 'dashboard'),
