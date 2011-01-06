@@ -492,7 +492,7 @@ function uc_buyingclub_view_finalized_orders_by_user() {
   $distributor_table = $distributor_db_info['table'];
   $distributor_column = $distributor_db_info['columns']['nid']['column'];
 
-  $query = "SELECT o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, SUM(bop.qty) AS qty_ordered ".
+  $query = "SELECT o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, SUM(bop.qty) AS qty_ordered, op.price AS price ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {uc_buyingclub_order_products} bop ".
     "WHERE p.type='product' AND p.nid=op.nid AND d.type='distributor' AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
@@ -502,39 +502,52 @@ function uc_buyingclub_view_finalized_orders_by_user() {
 
   $query_result = db_query($query, $start, $end);
 
+  // default output
+  if (!$query_result || $query_result->num_rows === 0) {
+    return "No orders to see for this period.";
+  }
+
   // build output
-  $out = "No orders to see for this period.";
+  $date_format = "ga l\, M jS Y";
+  $out = 'Orders placed from '. 
+    format_date($start, $type='custom', $format=$date_format) .' to '. 
+    format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
 
-  if ($query_result) {
-    $date_format = "ga l\, M jS Y";
-    $out = 'Orders placed from '. format_date($start, $type='custom', $format=$date_format) .' to '. format_date($end, $type='custom', $format=$date_format);
-    $out .= '<br /><br />';
+  // start first table
+  $current_member_name = '';
+  $total_price = 0;
+  $table = array();
+  $table_headers = array('Product', 'Distributor', 'Quantity Desired', 'Quantity to Receive', 'Price',);
 
-    $current_member_name = '';
-    $table = array();
-    $table_headers = array('Product', 'Distributor', 'Quantity Desired', 'Quantity Ordered',);
-    while ($row = db_fetch_array($query_result)) {
-      $member_name = $row['member_first_name'] .' '. $row['member_last_name'];
-      if ($member_name !== $current_member_name) {
-        // output old table
-        if (count($table) > 0) {
-          $out .= theme_table($table_headers, $table);
-        }
-
-        // start a new table
-        $out .= '<h3>'. $member_name .'</h3>';
-        $current_member_name = $member_name;
-        $table = array();
+  while ($row = db_fetch_array($query_result)) {
+    $member_name = $row['member_first_name'] .' '. $row['member_last_name'];
+    if ($member_name !== $current_member_name) {
+      // output old table
+      if (count($table) > 0) {
+        $table[] = array('', '', '', 'Total Due', money_format('$%.2i', $total_price));
+        $out .= theme_table($table_headers, $table);
       }
 
-      unset($row['member_first_name']);
-      unset($row['member_last_name']);
-      $table[] = $row;
+      // start a new table
+      $out .= '<h3>'. $member_name .'</h3>';
+      $current_member_name = $member_name;
+      $table = array();
+      $total_price = 0;
     }
 
-    if (count($table) > 0) {
-      $out .= theme_table($table_headers, $table);
-    }
+    // add this row to the table
+    unset($row['member_first_name']);
+    unset($row['member_last_name']);
+    $price = (float)$row['price'] * (float)$row['qty_ordered'];
+    $total_price += $price;
+    $row['price'] = money_format('$%.2i', $price);
+    $table[] = $row;
+  }
+
+  // output last table
+  if (count($table) > 0) {
+    $table[] = array('', '', '', 'Total Due', money_format('$%.2i', $total_price));
+    $out .= theme_table($table_headers, $table);
   }
 
   return $out;
