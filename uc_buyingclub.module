@@ -133,7 +133,7 @@ function uc_buyingclub_mail($key, &$message, $params) {
  * Create the finalization table and form.
  */
 function uc_buyingclub_finalization_form($rows) {
-  $ordering_period = uc_buyingclub_get_most_recent_ordering_period();
+  $ordering_period = _uc_buyingclub_get_most_recent_ordering_period();
   $start = $ordering_period->start;
   $end = $ordering_period->end;
 
@@ -419,7 +419,7 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
 
 function uc_buyingclub_view_finalized_orders() {
   // find start of most recent ordering period
-  $period = uc_buyingclub_get_most_recent_ordering_period();
+  $period = _uc_buyingclub_get_most_recent_ordering_period();
   $start = $period->start;
   $end = $period->end;
 
@@ -490,7 +490,7 @@ function uc_buyingclub_view_ordering_periods() {
  */
 function uc_buyingclub_view_finalized_orders_by_user() {
   // find start of most recent ordering period
-  $period = uc_buyingclub_get_most_recent_ordering_period();
+  $period = _uc_buyingclub_get_most_recent_ordering_period();
   $start = $period->start;
   $end = $period->end;
 
@@ -562,7 +562,7 @@ function uc_buyingclub_view_finalized_orders_by_user() {
 
 function uc_buyingclub_view_finalized_orders_by_distributor() {
   // find start of most recent ordering period
-  $period = uc_buyingclub_get_most_recent_ordering_period();
+  $period = _uc_buyingclub_get_most_recent_ordering_period();
   $start = $period->start;
   $end = $period->end;
 
@@ -635,7 +635,7 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
 /*
  * other useful functions
  */
-function uc_buyingclub_get_most_recent_ordering_period() {
+function _uc_buyingclub_get_most_recent_ordering_period() {
   $query = "SELECT p.start, p.end ".
     "FROM {uc_buyingclub_ordering_periods} p ".
     "WHERE p.start < %d ".
