@@ -116,7 +116,7 @@ function uc_buyingclub_mail($key, &$message, $params) {
       foreach ($params['products_given'] as $product => $given) {
         $body .= $product . ": wanted " . $params['products_desired'][$product] . ", received " . $params['products_given'][$product] . "<br />";
       }
-      $body .= '<br /><br />Your total cost will be $' . $params['total_cost'];
+      $body .= '<br /><br />Your total cost will be ' . money_format('$%.2i', $params['total_cost']);
       $body .= '</body></html>';
 
       $message['body'] = $body;
