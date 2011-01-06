@@ -489,6 +489,8 @@ function uc_buyingclub_view_ordering_periods() {
  * Show a summary by-user of the most recent ordering period. Meant to be something that could be printed and taken to a pickup day.
  */
 function uc_buyingclub_view_finalized_orders_by_user() {
+  drupal_add_css(drupal_get_path('module', 'uc_buyingclub') .'/uc_buyingclub.css');
+
   // find start of most recent ordering period
   $period = _uc_buyingclub_get_most_recent_ordering_period();
   $start = $period->start;
@@ -536,7 +538,7 @@ function uc_buyingclub_view_finalized_orders_by_user() {
       }
 
       // start a new table
-      $out .= '<h3>'. $member_name .'</h3>';
+      $out .= '<div class="uc_buyingclub_member_name">'. $member_name .'</div>';
       $current_member_name = $member_name;
       $table = array();
       $total_price = 0;
@@ -561,6 +563,8 @@ function uc_buyingclub_view_finalized_orders_by_user() {
 }
 
 function uc_buyingclub_view_finalized_orders_by_distributor() {
+  drupal_add_css(drupal_get_path('module', 'uc_buyingclub') .'/uc_buyingclub.css');
+
   // find start of most recent ordering period
   $period = _uc_buyingclub_get_most_recent_ordering_period();
   $start = $period->start;
@@ -609,11 +613,11 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
 
       // might also have a new distributor
       if ($row['distributor_name'] !== $current_distributor_name) {
-        $out .= '<h3>'. $row['distributor_name'] .'</h3>';
+        $out .= '<div class="uc_buyingclub_distributor_name">'. $row['distributor_name'] .'</div>';
         $current_distributor_name = $row['distributor_name'];
       }
 
-      $out .= '<h4>'. $row['product_name'] .'</h4>';
+      $out .= '<div class="uc_buyingclub_product_name">'. $row['product_name'] .'</div>';
       $current_product_name = $row['product_name'];
       $table = array();
       $total_qty = 0;
