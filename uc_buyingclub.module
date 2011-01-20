@@ -111,12 +111,17 @@ function uc_buyingclub_mail($key, &$message, $params) {
       $message['subject'] = t('Finalized '. $buying_club_name .' order', $variables, $language->language);
 
       $body = '<html><head></head><body>';
-      $body .= t('Hi '. $params['name'] .',<br /><br />', $variables, $language->language);
-      $body .= t('Your '. $buying_club_name .' order has been finalized:<br /><br />', $variables, $language->language);
+      $body .= t('Hello '. $buying_club_name .' member,<br /><br />', $variables, $language->language);
+      $body .= t('Your order has been finalized:<br /><br />', $variables, $language->language);
+
+      $body .= '<table cellpadding="3"><tr><th>Product</th><th>Quanity Desired</th><th>Quantity Ordered From Distributor</th></tr>';
       foreach ($params['products_given'] as $product => $given) {
-        $body .= $product . ": wanted " . $params['products_desired'][$product] . ", received " . $params['products_given'][$product] . "<br />";
+        $body .= '<tr><td>'. $product .'</td><td>'. $params['products_desired'][$product] .'</td><td>'. $params['products_given'][$product] .'</td></tr>';
       }
+      $body .= '</table>';
+
       $body .= '<br /><br />Your total cost will be ' . money_format('$%.2i', $params['total_cost']);
+      $body .= '<br /><br />See you at the next pickup day,<br />'. $buying_club_name;
       $body .= '</body></html>';
 
       $message['body'] = $body;
