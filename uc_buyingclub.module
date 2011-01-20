@@ -409,7 +409,9 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
       'products_given' => $products_given,
       'products_desired' => $products_desired,
     );
-    drupal_mail('uc_buyingclub', 'final_order', $account->mail, user_preferred_language($account), $params);
+
+    $store_values = uc_store_token_values('global');
+    drupal_mail('uc_buyingclub', 'final_order', $account->mail, user_preferred_language($account), $params, $store_values['store-email']);
   }
 }
 
