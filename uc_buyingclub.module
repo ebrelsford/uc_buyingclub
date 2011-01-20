@@ -294,6 +294,7 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
   // finalize each the total order for each user who ordered in this period
   uc_buyingclub_finalize_users($start, $end);
 
+  drupal_get_messages(); // clear messages that were already displayed
   drupal_set_message(t('Ordered the given amounts for each product and notified purchasers'));
 }
 
