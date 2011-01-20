@@ -31,8 +31,8 @@ To try the module, make some products with distributors and place a few orders. 
 TODO
 ----
 
-While the concept of ordering periods exists, /buyingclub/finalize does not allow the user to pick a ordering period.
+While the concept of ordering periods exists, the module does not allow a user to pick an ordering period.
 
-There should be a way to view finalizations as made using the above page, as a summary (all products), by-distributor, and by-user.
+Track overstock (the amount ordered from distributors that wasn't ordered by members).
 
-
+Make updated invoices more easily themed.
