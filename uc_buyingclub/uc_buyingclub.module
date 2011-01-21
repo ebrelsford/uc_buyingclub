@@ -175,9 +175,6 @@ function uc_buyingclub_finalization_form($rows) {
   $start = $ordering_period->start;
   $end = $ordering_period->end;
 
-  $store_values = uc_store_token_values('global');
-  print($store_values['store-email']);
-
   // warn user if this ordering period has already been (perhaps partially) finalized or should not yet be finalized
   if (_uc_buyingclub_already_finalized($start, $end)) {
     drupal_set_message('Someone has already finalized this ordering period. Please contact an admin if changes need to be made.', $type='error');

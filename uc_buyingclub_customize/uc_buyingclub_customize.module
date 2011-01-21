@@ -31,7 +31,6 @@ function uc_buyingclub_customize_form_alter(&$form, &$form_state, $form_id) {
 
 function uc_buyingclub_customize_checkout_pane_alter(&$panes) {
   
-  //dvm($panes);
   foreach ($panes as &$pane) {
     // make units show up in cart summary on checkout
     if ($pane['id'] == 'cart') {
