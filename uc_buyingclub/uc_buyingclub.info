@@ -7,3 +7,4 @@ package = Ubercart - extra
 dependencies[] = content
 dependencies[] = uc_order
 dependencies[] = uc_product
+dependencies[] = job_queue

@@ -435,7 +435,7 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
     );
 
     $store_values = uc_store_token_values('global');
-    drupal_mail('uc_buyingclub', 'final_order', $account->mail, user_preferred_language($account), $params, $store_values['store-email']);
+    job_queue_add('drupal_mail', 'Finalization mail', array('uc_buyingclub', 'final_order', $account->mail, user_preferred_language($account), $params, $store_values['store-email']), '', TRUE);
   }
 }
 
