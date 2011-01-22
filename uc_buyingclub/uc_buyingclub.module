@@ -21,19 +21,6 @@ function uc_buyingclub_theme_registry_alter(&$theme_registry) {
   $theme_registry['uc_catalog_browse']['function'] = 'theme_uc_buyingclub_uc_catalog_browse';
 }
 
-function theme_uc_buyingclub_uc_catalog_browse($tid = 0) {
-  $period = _uc_buyingclub_get_most_recent_ordering_period();
-  $date_format = "ga \o\\n l\, M jS Y";
-
-  if ($period->end > time()) {
-    drupal_set_message('The current ordering period is from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>');
-  }
-  else {
-    drupal_set_message('The most recent ordering period was from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', 'error');
-  }
-  return theme_uc_catalog_browse($tid);
-}
-
 function uc_buyingclub_perm() {
   return array('access uc_buyingclub', 'create uc_buyingclub', 'administer uc_buyingclub');
 }
@@ -673,6 +660,23 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
   }
 
   return $out;
+}
+
+
+/*
+ * let user know when last ordering period was, when current one ends.
+ */
+function theme_uc_buyingclub_uc_catalog_browse($tid = 0) {
+  $period = _uc_buyingclub_get_most_recent_ordering_period();
+  $date_format = "ga \o\\n l\, M jS Y";
+
+  if ($period->end > time()) {
+    drupal_set_message('The current ordering period is from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>');
+  }
+  else {
+    drupal_set_message('The most recent ordering period was from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', 'error');
+  }
+  return theme_uc_catalog_browse($tid);
 }
 
 /*
