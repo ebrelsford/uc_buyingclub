@@ -114,6 +114,7 @@ function uc_buyingclub_mail($key, &$message, $params) {
       $message['headers'] = array(
         'MIME-Version' => '1.0',
         'Content-Type' => 'text/html',
+        'From' => $store_values['store-email'],
       );
       $message['subject'] = t('Finalized '. $buying_club_name .' order', $variables, $language->language);
 
