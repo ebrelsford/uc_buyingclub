@@ -335,13 +335,16 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
   $start = $form_values['start'];
   $end = $form_values['end'];
 
+  $would_buy_more = _uc_buyingclub_get_would_buy_more_qty($start, $end);
+
   // finalize each product submitted with the quantity ordered as indicated
   foreach ($form_values as $key => $value) {
     if (stripos($key, $prefix) === 0) {
       $product_id = substr($key, strlen($prefix));
       $qty_ordered = $value;
+      $qty_would_buy_more = $would_buy_more[$product_id];
 
-      uc_buyingclub_finalize_product_order($product_id, $qty_ordered, $start, $end);
+      uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $start, $end);
     }
   }
 
@@ -353,7 +356,7 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
 }
 
 /*
- * Finalize all orders for a given product.
+ * Finalize all orders for a given product by recording the quantity allocated.
  *
  * @param $product_id
  *    The nid of the product node
@@ -364,7 +367,10 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
  * @param $end
  *    The end of the ordering period (in seconds)
  */
-function uc_buyingclub_finalize_product_order($product_id, $qty_ordered, $start, $end) {
+function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $start, $end) {
+  /*
+   * first, give everyone who ordered this product their share
+   */
   $query = "SELECT op.order_product_id AS id, op.qty AS qty_desired ".
     "FROM {uc_order_products} op, {uc_orders} o ".
     "WHERE op.order_id = o.order_id AND op.nid = %d ".
@@ -374,6 +380,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_ordered, $start,
   $query_result = db_query($query, $product_id, $start, $end);
 
   $qty_available = $qty_ordered;
+  $order_product_qty_given = array();
   if ($query_result) {
     while ($row = db_fetch_object($query_result)) {
       // determine how much of this order for this product will be fulfilled
@@ -390,6 +397,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_ordered, $start,
       }
 
       // save
+      $order_product_qty_given[$row->id] = $qty_given;
       $to_write = array(
         'order_product_id' => $row->id,
         'qty' => $qty_given,
@@ -399,6 +407,39 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_ordered, $start,
       
       $qty_available -= $qty_given;
     }
+  }
+
+  /*
+   * now, if there is anything left, give it first to the people who said they would take more
+   */
+  if ($qty_available > 0 && $qty_would_buy_more > 0) {
+    // increment amount to give for each person who said they'd take more
+    $query = "SELECT op.order_product_id AS order_product_id ".
+      "FROM {uc_orders} o, {uc_order_products} op ".
+      "WHERE op.order_id=o.order_id ".
+        "AND o.created > %d AND o.created < %d ".
+        "AND op.data LIKE '%%%s%%' ";
+
+    $query_result = db_query($query, $start, $end, UC_BUYINGCLUB_WOULD_BUY_MORE_LABEL);
+    if ($query_result) {
+      while (($row = db_fetch_object($query_result)) && $qty_available > 0) {
+        // find out how much the order-product got and increment
+        $to_write = array(
+          'order_product_id' => $row->order_product_id,
+          'qty' => $order_product_qty_given[$row->order_product_id] + 1,
+          'finalized' => time(),
+        );
+        drupal_write_record('uc_buyingclub_order_products', $to_write, array('order_product_id'));
+        $qty_available--;
+      }
+    }
+  }
+
+  /*
+   * anything left now is overstock
+   */
+  if ($qty_available > 0) {
+    // TODO record overstock
   }
 }
 
