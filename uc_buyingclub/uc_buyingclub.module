@@ -2,6 +2,11 @@
 // $Id$
 
 /*
+ * The label of the "Would buy more" attribute.
+ */
+define('UC_BUYINGCLUB_WOULD_BUY_MORE_LABEL', 'Would you buy an extra unit of this item if we needed more to meet our minimum?');
+
+/*
  * hooks
  */
 function uc_buyingclub_help($path, $arg) {
@@ -165,7 +170,7 @@ function _uc_buyingclub_get_orders_to_finalize($start, $end) {
 
   $query = "SELECT p.title AS product_name, p.nid AS product_id, SUM(op.qty) AS order_product_qty, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2 ".
-    "WHERE p.type='product' AND d.type='distributor' AND op.order_id=o.order_id AND p.nid=op.nid ".
+    "WHERE op.order_id=o.order_id AND p.nid=op.nid ".
       "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
       "AND ctd2.vid=p.vid ".
@@ -173,6 +178,29 @@ function _uc_buyingclub_get_orders_to_finalize($start, $end) {
     "ORDER BY d.title, p.title ";
 
   return db_query($query, $start, $end);
+}
+
+/*
+ * get an array of product ids to the number of members who said they'd buy an extra of it to meet minimums
+ */
+function _uc_buyingclub_get_would_buy_more_qty($start, $end) {
+  $query = "SELECT p.nid AS product_id, COUNT(*) AS would_buy_more_qty ".
+    "FROM {uc_orders} o, {uc_order_products} op, {node} p ".
+    "WHERE op.order_id=o.order_id AND p.nid=op.nid ".
+      "AND o.created > %d AND o.created < %d ".
+      "AND op.data LIKE '%%%s%%' ".
+    "GROUP BY p.nid ";
+
+  $arr = array();
+
+  $query_result = db_query($query, $start, $end, UC_BUYINGCLUB_WOULD_BUY_MORE_LABEL);
+  if ($query_result) {
+    while ($row = db_fetch_object($query_result)) {
+      $arr[$row->product_id] = (int)$row->would_buy_more_qty;
+    }
+  }
+
+  return $arr;
 }
 
 /*
@@ -192,17 +220,22 @@ function uc_buyingclub_finalization_form($rows) {
     drupal_set_message('This ordering period is not over yet. Please wait until '. format_date($end, $type='custom', $format=$date_format) .' to finalize it!', $type='error');
   }
 
-  // make query
+  // make queries
   $query_result = _uc_buyingclub_get_orders_to_finalize($start, $end);
+  $would_buy_more = _uc_buyingclub_get_would_buy_more_qty($start, $end);
 
   // build table/form
   $form = array();
 
   if ($query_result) {
     while ($row = db_fetch_object($query_result)) {
+      $would_buy_more_qty = $would_buy_more[$row->product_id];
+      if ($would_buy_more_qty == NULL) $would_buy_more_qty = 0;
+
       $form[$row->product_id]['product_id'] = array('#value' => stripslashes($row->product_id));
       $form[$row->product_id]['product_name'] = array('#value' => stripslashes($row->product_name));
       $form[$row->product_id]['order_product_qty'] = array('#value' => stripslashes($row->order_product_qty));
+      $form[$row->product_id]['would_buy_more'] = array('#value' => $would_buy_more_qty);
       $form[$row->product_id]['distributor_name'] = array('#value' => stripslashes($row->distributor_name));
       $form[$row->product_id]['minimum_order'] = array('#value' => stripslashes($row->minimum_order));
       $form[$row->product_id]['ordered_'. $row->product_id] = array(
@@ -249,6 +282,7 @@ function theme_uc_buyingclub_finalization_form($form) {
       $row[] = array('data' => drupal_render($form[$key]['product_name']));
       $row[] = array('data' => drupal_render($form[$key]['distributor_name']));
       $row[] = array('data' => drupal_render($form[$key]['order_product_qty']));
+      $row[] = array('data' => drupal_render($form[$key]['would_buy_more']));
       $row[] = array('data' => drupal_render($form[$key]['minimum_order']));
       $row[] = array('data' => drupal_render($form[$key]['ordered_' . $key]), 'class' => 'textfield');
       $rows[] = $row;
@@ -261,6 +295,7 @@ function theme_uc_buyingclub_finalization_form($form) {
   $header[] = t('Product');
   $header[] = t('Distributor');
   $header[] = t('Ordered by Members');
+  $header[] = t('Would Buy More');
   $header[] = t('Minimum Order');
   $header[] = array('data' => t('Qty to Order'));
 
@@ -461,13 +496,24 @@ function uc_buyingclub_view_finalized_orders() {
 
   $query = "SELECT p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, ctd2.". $minimum_order_column ." AS minimum_order, SUM(bop.qty) AS qty_ordered ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2, {uc_buyingclub_order_products} bop ".
-    "WHERE p.type='product' AND p.nid=op.nid AND d.type='distributor' AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
+    "WHERE p.nid=op.nid AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid AND ctd2.vid=p.vid ".
     "GROUP BY p.nid ".
     "ORDER BY d.title, p.title ";
 
   $query_result = db_query($query, $start, $end);
+
+  // build output
+  $date_format = "ga l\, M jS Y";
+  $out = 'Orders placed from '. 
+    format_date($start, $type='custom', $format=$date_format) .' to '. 
+    format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
+
+  // default output
+  if (!$query_result || $query_result->num_rows === 0) {
+    return $out . "No finalized orders to see for this period.";
+  }
 
   // make table
   $data = array();
@@ -478,8 +524,7 @@ function uc_buyingclub_view_finalized_orders() {
     }
   }
 
-  // theme table
-  return theme_table(array('Product', 'Distributor', 'Quantity Desired', 'Minimum Order', 'Quantity Ordered',), $data);
+  return $out . theme_table(array('Product', 'Distributor', 'Quantity Desired', 'Minimum Order', 'Quantity Ordered',), $data);
 }
 
 /*
@@ -530,7 +575,7 @@ function uc_buyingclub_view_finalized_orders_by_user() {
 
   $query = "SELECT o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, SUM(bop.qty) AS qty_ordered, op.price AS price ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {uc_buyingclub_order_products} bop ".
-    "WHERE p.type='product' AND p.nid=op.nid AND d.type='distributor' AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
+    "WHERE p.nid=op.nid AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
     "GROUP BY o.billing_last_name, o.billing_first_name, p.nid ".
@@ -538,16 +583,16 @@ function uc_buyingclub_view_finalized_orders_by_user() {
 
   $query_result = db_query($query, $start, $end);
 
-  // default output
-  if (!$query_result || $query_result->num_rows === 0) {
-    return "No orders to see for this period.";
-  }
-
   // build output
   $date_format = "ga l\, M jS Y";
   $out = 'Orders placed from '. 
     format_date($start, $type='custom', $format=$date_format) .' to '. 
     format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
+
+  // default output
+  if (!$query_result || $query_result->num_rows === 0) {
+    return $out . "No finalized orders to see for this period.";
+  }
 
   // start first table
   $current_member_name = '';
@@ -604,7 +649,7 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
 
   $query = "SELECT d.title AS distributor_name, p.title AS product_name, o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, SUM(bop.qty) AS qty_ordered ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {uc_buyingclub_order_products} bop ".
-    "WHERE p.type='product' AND p.nid=op.nid AND d.type='distributor' AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
+    "WHERE p.nid=op.nid AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
       "AND bop.qty > 0 ".
@@ -613,16 +658,16 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
 
   $query_result = db_query($query, $start, $end);
 
-  // default output
-  if (!$query_result || $query_result->num_rows === 0) {
-    return "No orders to see for this period.";
-  }
-
   // build output
   $date_format = "ga l\, M jS Y";
   $out = 'Orders placed from '. 
     format_date($start, $type='custom', $format=$date_format) .' to '. 
     format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
+
+  // default output
+  if (!$query_result || $query_result->num_rows === 0) {
+    return $out . "No finalized orders to see for this period.";
+  }
 
   $current_distributor_name = '';
   $current_product_name = '';
