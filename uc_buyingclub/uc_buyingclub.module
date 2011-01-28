@@ -99,6 +99,21 @@ function uc_buyingclub_block($op='list', $delta=0) {
   return $block;
 }
 
+function uc_buyingclub_token_values($type, $object = NULL, $options = array()) {
+  if ($type == 'global') {
+    $period = _uc_buyingclub_get_most_recent_ordering_period();
+    $date_format = 'l\, M jS';
+    $tokens['pickup-date'] = '6pm - 9pm on '. format_date($period->pickup, $type='custom', $format=$date_format);
+    return $tokens;
+  }
+}
+function uc_buyingclub_token_list($type = 'all') {
+  if ($type == 'global' || $type == 'all') {
+    $tokens['pickup-date'] = t('The next pickup date');
+    return $tokens;
+  }
+}
+
 function uc_buyingclub_theme() {
   return array(
     'uc_buyingclub_finalization_form' => array(
