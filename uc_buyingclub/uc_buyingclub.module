@@ -777,6 +777,16 @@ function theme_uc_buyingclub_uc_catalog_browse($tid = 0) {
   }
   else {
     drupal_set_message('The most recent ordering period was from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', 'error');
+
+    // only let admins see catalog all the time
+    if (!user_access('administer uc_buyingclub')) {
+      $next_period = _uc_buyingclub_get_next_ordering_period();
+      $out = "Sorry, ordering is not currently open. Please come back during the next ordering period.";
+      if ($next_period) {
+        $out .= ' It will be from <b>'. format_date($next_period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($next_period->end, $type='custom', $format=$date_format) .'</b>';
+      }
+      return $out;
+    }
   }
   return theme_uc_catalog_browse($tid);
 }
@@ -789,6 +799,22 @@ function _uc_buyingclub_get_most_recent_ordering_period() {
     "FROM {uc_buyingclub_ordering_periods} p ".
     "WHERE p.start < %d ".
     "ORDER BY p.start DESC ".
+    "LIMIT 1";
+
+  $query_result = db_query($query, time());
+
+  if ($query_result) {
+    $period = db_fetch_object($query_result);
+  }
+
+  return $period;
+}
+
+function _uc_buyingclub_get_next_ordering_period() {
+  $query = "SELECT p.start, p.end ".
+    "FROM {uc_buyingclub_ordering_periods} p ".
+    "WHERE p.start > %d ".
+    "ORDER BY p.start ASC ".
     "LIMIT 1";
 
   $query_result = db_query($query, time());
