@@ -138,19 +138,58 @@ function uc_buyingclub_mail($key, &$message, $params) {
       );
       $message['subject'] = t('Finalized '. $buying_club_name .' order', $variables, $language->language);
 
-      $body = '<html><head></head><body>';
-      $body .= t('Hello '. $buying_club_name .' member,<br /><br />', $variables, $language->language);
-      $body .= t('Your order has been finalized:<br /><br />', $variables, $language->language);
+      $body = <<<EOT
+<html>
+    <body>
+        <table align="center" cellpadding="0" cellspacing="0" style="font-family: Helvetica,Arial,sans-serif; font-size: 1em; color: rgb(25, 25, 25);" width="700">
+            <tbody>
+                <tr>
+                    <td><img alt="Greene Hill Food Co-op" height="282" src="http://members.greenehillfoodcoop.com/images/newsletter_header_5.jpg" width="700" /></td>
+                </tr>
+            </tbody>
+        </table>
+        <table align="center" cellpadding="10px" cellspacing="0" style="font-family: Helvetica,Arial,sans-serif; font-size: 1em; color: rgb(25, 25, 25);" width="628px">
+            <tbody>
+                 <tr align="center" border="0" cellpadding="0" cellspacing="0" style="background: none repeat scroll 0% 0% rgb(255, 255, 255); font-family: Helvetica,Arial,sans-serif; font-size: 1em;" width="628">
+                     <td style="text-align: left;">
+                         <div style="display: inline; font-family: Impact,Arial Black,sans-serif; font-size: 1.6em; letter-spacing: 0.05em; word-spacing: 0.05em; text-transform: uppercase; color: rgb(102, 0, 0);">Buying Club Invoice</div>
+                            <p>Hello Greene Hill Food Co-op Buying Club member,</p>
+                            <p>This is your invoice for your most recent order.</p>
+                            <table cellpadding="3">
+                                <tr>
+                                    <th>Product</th>
+                                    <th>Quanity Desired</th>
+                                    <th>Quantity You Will Receive</th>
+                                    <th>Cost</th>
+                                </tr>
+                                <tbody>
+EOT;
 
-      $body .= '<table cellpadding="3"><tr><th>Product</th><th>Quanity Desired</th><th>Quantity Ordered From Distributor</th></tr>';
       foreach ($params['products_given'] as $product => $given) {
-        $body .= '<tr><td>'. $product .'</td><td>'. $params['products_desired'][$product] .'</td><td>'. $params['products_given'][$product] .'</td></tr>';
+        $body .= '<tr>';
+        $body .= '<td>'. $product .'</td>';
+        $body .= '<td>'. $params['products_desired'][$product] .'</td>';
+        $body .= '<td>'. $params['products_given'][$product] .'</td>';
+        $body .= '<td>'. uc_currency_format($params['products_cost'][$product]) .'</td>';
+        $body .= '</tr>';
       }
-      $body .= '</table>';
 
-      $body .= '<br /><br />Your total cost will be ' . money_format('$%.2i', $params['total_cost']);
-      $body .= '<br /><br />See you at the next pickup day,<br />'. $buying_club_name;
-      $body .= '</body></html>';
+      $formatted_total = uc_currency_format($params['total_cost']);
+
+      $body .= <<<EOT
+                                </tbody>
+                            </table>
+                            <p>Your estimated total is <b>$formatted_total</b></p>
+                            <p>Please remember that this total will likely be slightly different on pickup day. The weights of some items, such as meat, will vary, and there is always the chance that some items are not delivered. So, please, bring a blank check on Wednesday.</p>
+                            <p>See you on pickup day!</p>
+                        </div>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </body>
+</html>
+EOT;
 
       $message['body'] = $body;
       break;
@@ -501,6 +540,7 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
   $total_cost = 0;
   $products_given = array();
   $products_desired = array();
+  $products_cost = array();
 
   if ($query_result) {
     while ($row = db_fetch_object($query_result)) {
@@ -509,13 +549,17 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
       $qty_given = (int)$row->qty_given;
       $qty_desired = (int)$row->qty_desired;
 
-      $total_cost += ($price * $qty_given);
+      $cost = $price * $qty_given;
+      $total_cost += $cost;
 
       if (!$products_given[$row->title]) $products_given[$row->title] = 0;
       $products_given[$row->title] += $qty_given;
 
       if (!$products_desired[$row->title]) $products_desired[$row->title] = 0;
       $products_desired[$row->title] += $qty_desired;
+
+      if (!$products_cost[$row->title]) $products_cost[$row->title] = 0;
+      $products_cost[$row->title] += $cost;
     }
 
     $account = user_load($user_id);
@@ -524,6 +568,7 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
       'total_cost' => $total_cost,
       'products_given' => $products_given,
       'products_desired' => $products_desired,
+      'products_cost' => $products_cost,
     );
 
     $store_values = uc_store_token_values('global');
