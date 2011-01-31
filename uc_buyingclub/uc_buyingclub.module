@@ -109,7 +109,7 @@ function uc_buyingclub_token_values($type, $object = NULL, $options = array()) {
 }
 function uc_buyingclub_token_list($type = 'all') {
   if ($type == 'global' || $type == 'all') {
-    $tokens['pickup-date'] = t('The next pickup date');
+    $tokens['global']['pickup-date'] = t('The next pickup date');
     return $tokens;
   }
 }
