@@ -832,6 +832,9 @@ function theme_uc_buyingclub_uc_catalog_browse($tid = 0) {
       return $out;
     }
   }
+
+  drupal_add_js(drupal_get_path('module', 'uc_buyingclub') .'/jquery.example.min.js');
+  drupal_add_js(drupal_get_path('module', 'uc_buyingclub') .'/uc_buyingclub.js');
   return theme_uc_catalog_browse($tid);
 }
 
