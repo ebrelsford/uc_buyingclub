@@ -405,7 +405,7 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
   // finalize each the total order for each user who ordered in this period
   uc_buyingclub_finalize_users($start, $end);
 
-  drupal_set_message(t('Ordered the given amounts for each product and notified purchasers'), $repeat=FALSE);
+  drupal_set_message(t('Ordered the given amounts for each product and notified purchasers'), $type='status', $repeat=FALSE);
 }
 
 /*
@@ -817,10 +817,10 @@ function theme_uc_buyingclub_uc_catalog_browse($tid = 0) {
   $date_format = "ga \o\\n l\, M jS Y";
 
   if ($period->end > time()) {
-    drupal_set_message('The current ordering period is from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', $repeat=FALSE);
+    drupal_set_message('The current ordering period is from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', $type='status', $repeat=FALSE);
   }
   else {
-    drupal_set_message('The most recent ordering period was from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', 'error', $repeat=FALSE);
+    drupal_set_message('The most recent ordering period was from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', $type='error', $repeat=FALSE);
 
     // only let admins see catalog all the time
     if (!user_access('administer uc_buyingclub')) {
