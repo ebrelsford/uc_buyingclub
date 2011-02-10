@@ -313,6 +313,7 @@ function uc_buyingclub_finalization_form($rows) {
     '#value' => l(t('Cancel'), 'dashboard'),
   );
 
+  drupal_add_js(drupal_get_path('module', 'uc_buyingclub') .'/uc_buyingclub.js');
   return $form;
 }
 

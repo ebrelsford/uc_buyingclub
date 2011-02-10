@@ -9,6 +9,9 @@ Drupal.behaviors.ucBuyingClubCatalogExamples = function(context) {
     });
 }
 
+/*
+ * Keep form examples from breaking validation
+ */
 Drupal.behaviors.ucBuyingClubCatalogFixBeforeSubmit = function(context) {
     $(context).find('#uc-multibuy-table form:not(.ucBuyingClubCatalogFixBeforeSubmit-processed)').each(function() {
         $(this).submit(function() {
@@ -17,5 +20,17 @@ Drupal.behaviors.ucBuyingClubCatalogFixBeforeSubmit = function(context) {
                 .attr('value', '0');
         })
         $(this).addClass('ucBuyingClubCatalogFixBeforeSubmit-processed');
+    });
+}
+
+/*
+ * Confirm before submitting finalization form
+ */
+Drupal.behaviors.ucBuyingClubFinalizationFormConfirm = function(context) {
+    $(context).find('form#uc-buyingclub-finalization-form:not(.ucBuyingClubFinalizationFormConfirm-processed)').each(function() {
+        $(this).submit(function() {
+            return confirm('Are you sure you want to finalize this ordering period? There is no going back! Everyone will get an email when you submit this.');
+        })
+        $(this).addClass('ucBuyingClubFinalizationFormConfirm-processed');
     });
 }
