@@ -19,13 +19,6 @@ function uc_buyingclub_help($path, $arg) {
   return $output;
 }
 
-function uc_buyingclub_theme_registry_alter(&$theme_registry) {
-  $originalpath = array_shift($theme_registry['uc_catalog_browse']['theme paths']);
-  $modulepath = drupal_get_path('module', 'uc_buyingclub');
-  array_unshift($theme_registry['uc_catalog_browse']['theme paths'], $originalpath, $modulepath);
-  $theme_registry['uc_catalog_browse']['function'] = 'theme_uc_buyingclub_uc_catalog_browse';
-}
-
 function uc_buyingclub_perm() {
   return array('access uc_buyingclub', 'create uc_buyingclub', 'administer uc_buyingclub');
 }
@@ -806,36 +799,6 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
   }
 
   return $out;
-}
-
-
-/*
- * let user know when last ordering period was, when current one ends.
- */
-function theme_uc_buyingclub_uc_catalog_browse($tid = 0) {
-  $period = _uc_buyingclub_get_most_recent_ordering_period();
-  $date_format = "ga \o\\n l\, M jS Y";
-
-  if ($period->end > time()) {
-    drupal_set_message('The current ordering period is from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', $type='status', $repeat=FALSE);
-  }
-  else {
-    drupal_set_message('The most recent ordering period was from <b>'. format_date($period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($period->end, $type='custom', $format=$date_format) .'</b>', $type='error', $repeat=FALSE);
-
-    // only let admins see catalog all the time
-    if (!user_access('administer uc_buyingclub')) {
-      $next_period = _uc_buyingclub_get_next_ordering_period();
-      $out = "Sorry, ordering is not currently open. Please come back during the next ordering period.";
-      if ($next_period) {
-        $out .= ' It will be from <b>'. format_date($next_period->start, $type='custom', $format=$date_format) .'</b> to <b>'. format_date($next_period->end, $type='custom', $format=$date_format) .'</b>';
-      }
-      return $out;
-    }
-  }
-
-  drupal_add_js(drupal_get_path('module', 'uc_buyingclub') .'/jquery.example.min.js');
-  drupal_add_js(drupal_get_path('module', 'uc_buyingclub') .'/uc_buyingclub.js');
-  return theme_uc_catalog_browse($tid);
 }
 
 /*

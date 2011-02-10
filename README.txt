@@ -40,7 +40,7 @@ To see ordering periods, go to
 TODO
 ----
 
-While the concept of ordering periods exists, the module does not allow a user to pick an ordering period.
+While the concept of ordering periods exists, the module does not allow a buying club manager to pick an ordering period.
 
 Track overstock (the amount ordered from distributors that wasn't ordered by members).
 

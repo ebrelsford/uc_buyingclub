@@ -1,9 +1,0 @@
-; $Id$
-name = Buying Club customizations
-description = Changes some Ubercart tables and forms to use custom fields used by uc_buyingclub
-core = 6.x
-php = 5.0
-package = Ubercart - extra
-dependencies[] = content
-dependencies[] = uc_cart
-

@@ -80,7 +80,106 @@ function uc_buyingclub_schema() {
     'primary key' => array('uc_buyingclub_order_product_id'),
   );
 
+  $schema['uc_buyingclub_products'] = array(
+    'description' => 'Details for products for given ordering periods.',
+    'fields' => array(
+      'uc_buyingclub_product_id' => array(
+        'description' => 'Primary key: the buyingclub product ID.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'product_id' => array(
+        'description' => 'The {uc_products}.product_id.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'qty_ordered' => array(
+        'description' => 'The quantity of the product ordered.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'qty_overstock' => array(
+        'description' => 'The quantity of the product expected to be overstock.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'finalized' => array(
+        'description' => 'The Unix timestamp indicating when the order was finalized--when the final order was placed with the distributor.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'order_product_id' => array('product_id'),
+    ),
+    'primary key' => array('uc_buyingclub_product_id'),
+  );
+
   return $schema;
+}
+
+/*
+ * add uc_buyingclub_products table
+ */
+function uc_buyingclub_update_6000() {
+  $schema['uc_buyingclub_products'] = array(
+    'description' => 'Details for products for given ordering periods.',
+    'fields' => array(
+      'uc_buyingclub_product_id' => array(
+        'description' => 'Primary key: the buyingclub product ID.',
+        'type' => 'serial',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+      ),
+      'product_id' => array(
+        'description' => 'The {uc_products}.product_id.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'qty_ordered' => array(
+        'description' => 'The quantity of the product ordered.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'qty_overstock' => array(
+        'description' => 'The quantity of the product expected to be overstock.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+      'finalized' => array(
+        'description' => 'The Unix timestamp indicating when the order was finalized--when the final order was placed with the distributor.',
+        'type' => 'int',
+        'not null' => TRUE,
+        'default' => 0,
+      ),
+    ),
+    'indexes' => array(
+      'order_product_id' => array('product_id'),
+    ),
+    'primary key' => array('uc_buyingclub_product_id'),
+  );
+
+  $ret = array();
+  db_create_table($ret, 'uc_buyingclub_products', $schema['uc_buyingclub_products']);
+  return $ret;
 }
 
 /**

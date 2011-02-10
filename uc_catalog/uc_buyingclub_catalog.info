@@ -1,0 +1,9 @@
+; $Id$
+name = Buying Club Catalog
+description = Modifications to Ubercart's catalog for running a buying club
+core = 6.x
+php = 5.0
+package = Buying Club
+dependencies[] = uc_buyingclub
+dependencies[] = uc_catalog
+

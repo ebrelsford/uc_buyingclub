@@ -1,15 +1,21 @@
 <?php
 // $Id$
 
-function uc_buyingclub_customize_theme() {
+/*
+ * hook_theme
+ */
+function uc_buyingclub_cart_theme() {
   return array(
-    'uc_buyingclub_customize_cart_review_table' => array(
+    'uc_buyingclub_cart_review_table' => array(
       'arguments' => array('show_subtotal' => TRUE),
     ),
   );
 }
 
-function uc_buyingclub_customize_form_alter(&$form, &$form_state, $form_id) {
+/*
+ * hook_form_alter
+ */
+function uc_buyingclub_cart_form_alter(&$form, &$form_state, $form_id) {
 
   // make units show up in cart
   if ($form_id == 'uc_cart_view_form') {
@@ -29,22 +35,22 @@ function uc_buyingclub_customize_form_alter(&$form, &$form_state, $form_id) {
   }
 }
 
-function uc_buyingclub_customize_checkout_pane_alter(&$panes) {
+function uc_buyingclub_cart_checkout_pane_alter(&$panes) {
   
   foreach ($panes as &$pane) {
     // make units show up in cart summary on checkout
     if ($pane['id'] == 'cart') {
-      $pane['callback'] = 'uc_buyingclub_customize_checkout_pane_cart';
+      $pane['callback'] = 'uc_buyingclub_cart_checkout_pane_cart';
     }
   }
 }
 
-function uc_buyingclub_customize_checkout_pane_cart($op) {
+function uc_buyingclub_cart_checkout_pane_cart($op) {
   switch ($op) {
     case 'view':
       // change the first table users see
       $contents['cart_review_table'] = array(
-        '#value' => theme('uc_buyingclub_customize_cart_review_table'),
+        '#value' => theme('uc_buyingclub_cart_review_table'),
         '#weight' => variable_get('uc_pane_cart_field_cart_weight', 2),
       );
       return array('contents' => $contents, 'next-button' => FALSE);
@@ -80,7 +86,7 @@ function uc_buyingclub_customize_checkout_pane_cart($op) {
   }
 }
 
-function theme_uc_buyingclub_customize_cart_review_table($show_subtotal = TRUE) {
+function theme_uc_buyingclub_cart_review_table($show_subtotal = TRUE) {
   $subtotal = 0;
 
   // Set up table header.
