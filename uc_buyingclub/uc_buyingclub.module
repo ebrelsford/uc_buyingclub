@@ -131,6 +131,8 @@ function uc_buyingclub_mail($key, &$message, $params) {
       );
       $message['subject'] = t('Finalized '. $buying_club_name .' order', $variables, $language->language);
 
+      $first_name = $params['first_name'];
+
       $body = <<<EOT
 <html>
     <body>
@@ -146,7 +148,7 @@ function uc_buyingclub_mail($key, &$message, $params) {
                  <tr align="center" border="0" cellpadding="0" cellspacing="0" style="background: none repeat scroll 0% 0% rgb(255, 255, 255); font-family: Helvetica,Arial,sans-serif; font-size: 1em;" width="628">
                      <td style="text-align: left;">
                          <div style="display: inline; font-family: Impact,Arial Black,sans-serif; font-size: 1.6em; letter-spacing: 0.05em; word-spacing: 0.05em; text-transform: uppercase; color: rgb(102, 0, 0);">Buying Club Invoice</div>
-                            <p>Hello Greene Hill Food Co-op Buying Club member,</p>
+                            <p>Hello $first_name,</p>
                             <p>This is your invoice for your most recent order.</p>
                             <table cellpadding="3">
                                 <tr>
@@ -172,9 +174,9 @@ EOT;
       $body .= <<<EOT
                                 </tbody>
                             </table>
-                            <p>Your estimated total is <b>$formatted_total</b></p>
-                            <p>Please remember that this total will likely be slightly different on pickup day. The weights of some items, such as meat, will vary, and there is always the chance that some items are not delivered. So, please, bring a blank check on Wednesday.</p>
-                            <p>See you on pickup day!</p>
+                            <p>Your estimated, preliminary subtotal is <b>$formatted_total</b></p>
+                            <p>Please remember that this total will likely be slightly different on pickup day. The weights of some items, such as meat, will vary, and there is always the chance that some items will not be delivered. So, please, bring a blank check when you pick up your food.</p>
+                            <p>See you at 18 Putnam Avenue on pickup day: Wednesday, February 16th, from 6pm-9pm.</p>
                         </div>
                     </td>
                 </tr>
@@ -523,7 +525,7 @@ function uc_buyingclub_finalize_users($start, $end) {
  *    The end of the ordering period (in seconds)
  */
 function uc_buyingclub_finalize_user($user_id, $start, $end) {
-  $query = "SELECT op.title AS title, op.qty AS qty_desired, bop.qty AS qty_given, op.price AS price ".
+  $query = "SELECT op.title AS title, op.qty AS qty_desired, bop.qty AS qty_given, op.price AS price, o.billing_first_name as first_name ".
     "FROM {uc_orders} o, {uc_order_products} op, {uc_buyingclub_order_products} bop ".
     "WHERE o.uid=%d AND o.created > %d AND o.created < %d ".
       "AND op.order_id = o.order_id AND bop.order_product_id = op.order_product_id";
@@ -534,9 +536,15 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
   $products_given = array();
   $products_desired = array();
   $products_cost = array();
+  $first_name = '';
 
   if ($query_result) {
     while ($row = db_fetch_object($query_result)) {
+      // get first name if we don't already have it
+      if ($first_name == '') {
+        $first_name = $row->first_name;
+      }
+
       // assemble summary, new price
       $price = (float)$row->price;
       $qty_given = (int)$row->qty_given;
@@ -555,15 +563,15 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
       $products_cost[$row->title] += $cost;
     }
 
-    $account = user_load($user_id);
     $params = array(
-      'name' => $account->name,
+      'first_name' => $first_name,
       'total_cost' => $total_cost,
       'products_given' => $products_given,
       'products_desired' => $products_desired,
       'products_cost' => $products_cost,
     );
 
+    $account = user_load($user_id);
     $store_values = uc_store_token_values('global');
     job_queue_add('drupal_mail', 'Finalization mail', array('uc_buyingclub', 'final_order', $account->mail, user_preferred_language($account), $params, $store_values['store-email']), '', TRUE);
   }

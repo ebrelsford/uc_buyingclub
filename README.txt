@@ -44,4 +44,4 @@ While the concept of ordering periods exists, the module does not allow a buying
 
 Track overstock (the amount ordered from distributors that wasn't ordered by members).
 
-Make updated invoices more easily themed.
+Make updated invoices more easily themed and configured by buying club managers.
