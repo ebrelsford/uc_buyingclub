@@ -485,11 +485,18 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
   }
 
   /*
-   * anything left now is overstock
+   * finalize the product as a whole for this ordering period.
+   * record overstock, if any.
    */
-  if ($qty_available > 0) {
-    // TODO record overstock
-  }
+  $ordering_period = _uc_buyingclub_get_ordering_period($start, $end);
+  $to_write = array(
+    'product_id' => $product_id,
+    'qty_ordered' => $qty_ordered,
+    'qty_overstock' => $qty_available,
+    'ordering_period_id' => $ordering_period->ordering_period_id,
+    'finalized' => time(),
+  );
+  drupal_write_record('uc_buyingclub_products', $to_write);
 }
 
 /*
@@ -813,6 +820,28 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
 /*
  * other useful functions
  */
+
+/*
+ * Get ordering period by specified start and end times.
+ */
+function _uc_buyingclub_get_ordering_period($start, $end) {
+  $query = "SELECT p.ordering_period_id, p.start, p.end ".
+    "FROM {uc_buyingclub_ordering_periods} p ".
+    "WHERE p.start = %d AND p.end = %d ".
+    "LIMIT 1";
+
+  $query_result = db_query($query, $start, $end);
+
+  if ($query_result) {
+    $period = db_fetch_object($query_result);
+  }
+
+  return $period;
+}
+
+/*
+ * Get most recent/current ordering period based on the current time.
+ */
 function _uc_buyingclub_get_most_recent_ordering_period() {
   $query = "SELECT p.start, p.end ".
     "FROM {uc_buyingclub_ordering_periods} p ".
@@ -829,6 +858,9 @@ function _uc_buyingclub_get_most_recent_ordering_period() {
   return $period;
 }
 
+/*
+ * Get next (not current) ordering period based on the current time.
+ */
 function _uc_buyingclub_get_next_ordering_period() {
   $query = "SELECT p.start, p.end ".
     "FROM {uc_buyingclub_ordering_periods} p ".

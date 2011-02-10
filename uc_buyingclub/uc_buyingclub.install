@@ -89,6 +89,13 @@ function uc_buyingclub_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'ordering_period_id' => array(
+        'description' => 'The {uc_buyingclub_ordering_periods}.ordering_period_id.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'product_id' => array(
         'description' => 'The {uc_products}.product_id.',
         'type' => 'int',
@@ -120,7 +127,8 @@ function uc_buyingclub_schema() {
       ),
     ),
     'indexes' => array(
-      'order_product_id' => array('product_id'),
+      'ordering_period_id' => array('ordering_period_id'),
+      'product_id' => array('product_id'),
     ),
     'primary key' => array('uc_buyingclub_product_id'),
   );
@@ -141,6 +149,13 @@ function uc_buyingclub_update_6000() {
         'unsigned' => TRUE,
         'not null' => TRUE,
       ),
+      'ordering_period_id' => array(
+        'description' => 'The {uc_buyingclub_ordering_periods}.ordering_period_id.',
+        'type' => 'int',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'product_id' => array(
         'description' => 'The {uc_products}.product_id.',
         'type' => 'int',
@@ -172,7 +187,8 @@ function uc_buyingclub_update_6000() {
       ),
     ),
     'indexes' => array(
-      'order_product_id' => array('product_id'),
+      'ordering_period_id' => array('ordering_period_id'),
+      'product_id' => array('product_id'),
     ),
     'primary key' => array('uc_buyingclub_product_id'),
   );
