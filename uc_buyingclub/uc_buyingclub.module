@@ -55,6 +55,14 @@ function uc_buyingclub_menu() {
     'page callback' => 'uc_buyingclub_view_finalized_orders_by_distributor',
   );
 
+  $items['buyingclub/view/finalized/by_distributor/csv'] = array(
+    'title' => "Buying Club: View finalized orders by distributor",
+    'access arguments' => array('administer uc_buyingclub'),
+    //'page arguments' => array(3, 2),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_download_finalized',
+  );
+
   $items['buyingclub/view/periods'] = array(
     'title' => "Buying Club: View ordering periods",
     'access arguments' => array('administer uc_buyingclub'),
@@ -127,7 +135,7 @@ function uc_buyingclub_mail($key, &$message, $params) {
       $message['headers'] = array(
         'MIME-Version' => '1.0',
         'Content-Type' => 'text/html',
-        'From' => $store_values['store-email'],
+        'From' => 'Greene Hill Food Co-op Merchandising Committee <merchandising@greenehillfoodcoop.com>', # TODO make configurable
       );
       $message['subject'] = t('Finalized '. $buying_club_name .' order', $variables, $language->language);
 
@@ -171,6 +179,7 @@ EOT;
 
       $formatted_total = uc_currency_format($params['total_cost']);
 
+      # TODO make configurable
       $body .= <<<EOT
                                 </tbody>
                             </table>
@@ -634,6 +643,48 @@ function uc_buyingclub_view_finalized_orders() {
   }
 
   return $out . theme_table(array('Product', 'Distributor', 'Quantity Desired', 'Minimum Order', 'Quantity Ordered',), $data);
+}
+
+function uc_buyingclub_download_finalized($ordering_period_id=3, $distributor_id=2) {
+  // select all products with the total ordered
+  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
+  $distributor_table = $distributor_db_info['table'];
+  $distributor_column = $distributor_db_info['columns']['nid']['column'];
+
+  $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
+  $minimum_order_table = $minimum_order_db_info['table'];
+  $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
+  
+  $query = "SELECT p.title AS 'product', ubp.qty_ordered AS `total ordered`, ctd2.". $minimum_order_column ." AS `minimum order` ".
+    "FROM {uc_buyingclub_products} ubp, {uc_products} up, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2 ".
+    "WHERE ubp.product_id = p.nid ".
+    "AND ctd.vid = p.vid ".
+    "AND ctd.". $distributor_column ." = %d ".
+    "AND ctd2.vid = p.vid ".
+    "AND ubp.ordering_period_id = %d ".
+    "GROUP BY p.nid ".
+    "ORDER BY d.title, p.title";
+
+  $result = db_query($query, $distributor_id, $ordering_period_id);
+
+  drupal_set_header('Content-Type: text/csv');
+  drupal_set_header('Content-Disposition: attachment; filename=test.csv');
+
+  // output as CSV
+  $header = array(
+    'Product',
+    'Quantity to order',
+    'Minimum order',
+  );
+  print implode(',', $header) ."\r\n";
+   
+  while ($row = db_fetch_array($result)) {
+    foreach ($row as $value) {
+      $values[] = '"' . str_replace('"', '""', decode_entities(strip_tags($value))) . '"'; 
+    }
+    print implode(',', $values) ."\r\n";
+    unset($values);
+  }
 }
 
 /*
