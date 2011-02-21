@@ -181,6 +181,7 @@ EOT;
       }
 
       $formatted_total = uc_currency_format($params['total_cost']);
+      $pickup_date = $params['pickup_date'];
 
       # TODO make configurable
       $body .= <<<EOT
@@ -188,7 +189,7 @@ EOT;
                             </table>
                             <p>Your estimated, preliminary subtotal is <b>$formatted_total</b></p>
                             <p>Please remember that this total will likely be slightly different on pickup day. The weights of some items, such as meat, will vary, and there is always the chance that some items will not be delivered. So, please, bring a blank check when you pick up your food.</p>
-                            <p>See you at 18 Putnam Avenue on pickup day: Wednesday, February 16th, from 6pm-9pm.</p>
+                            <p>See you at 18 Putnam Avenue on pickup day: $pickup_date.</p>
                         </div>
                     </td>
                 </tr>
@@ -585,12 +586,14 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
       $products_cost[$row->title] += $cost;
     }
 
+    $buyingclub_values = uc_buyingclub_token_values('order');
     $params = array(
       'first_name' => $first_name,
       'total_cost' => $total_cost,
       'products_given' => $products_given,
       'products_desired' => $products_desired,
       'products_cost' => $products_cost,
+      'pickup_date' => $buyingclub_values['order-pickup-date'],
     );
 
     $account = user_load($user_id);
