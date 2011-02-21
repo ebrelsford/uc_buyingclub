@@ -229,7 +229,7 @@ function _uc_buyingclub_get_orders_to_finalize($start, $end) {
   $query = "SELECT p.title AS product_name, p.nid AS product_id, SUM(op.qty) AS order_product_qty, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2 ".
     "WHERE op.order_id=o.order_id AND p.nid=op.nid ".
-      "AND o.created > %d AND o.created < %d ".
+      "AND o.created > %d AND o.created < %d AND o.order_status='pending' ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
       "AND ctd2.vid=p.vid ".
     "GROUP BY p.nid ".
@@ -245,7 +245,7 @@ function _uc_buyingclub_get_would_buy_more_qty($start, $end) {
   $query = "SELECT p.nid AS product_id, COUNT(*) AS would_buy_more_qty ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p ".
     "WHERE op.order_id=o.order_id AND p.nid=op.nid ".
-      "AND o.created > %d AND o.created < %d ".
+      "AND o.created > %d AND o.created < %d AND o.order_status='pending' ".
       "AND op.data LIKE '%%%s%%' ".
     "GROUP BY p.nid ";
 
@@ -432,7 +432,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
   $query = "SELECT op.order_product_id AS id, op.qty AS qty_desired ".
     "FROM {uc_order_products} op, {uc_orders} o ".
     "WHERE op.order_id = o.order_id AND op.nid = %d ".
-    "AND o.created > %d AND o.created < %d ".
+    "AND o.created > %d AND o.created < %d AND o.order_status='pending' ".
     "ORDER BY o.created";
 
   $query_result = db_query($query, $product_id, $start, $end);
@@ -475,7 +475,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
     $query = "SELECT op.order_product_id AS order_product_id ".
       "FROM {uc_orders} o, {uc_order_products} op ".
       "WHERE op.order_id=o.order_id ".
-        "AND o.created > %d AND o.created < %d ".
+        "AND o.created > %d AND o.created < %d AND o.order_status='pending' ".
         "AND op.nid=%d ".
         "AND op.data LIKE '%%%s%%' ";
 
@@ -521,7 +521,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
 function uc_buyingclub_finalize_users($start, $end) {
   $query = "SELECT DISTINCT o.uid AS user_id ".
     "FROM {uc_orders} o ".
-    "WHERE o.created > %d AND o.created < %d";
+    "WHERE o.created > %d AND o.created < %d AND o.order_status='pending' ";
 
   $query_result = db_query($query, $start, $end);
 
@@ -545,7 +545,7 @@ function uc_buyingclub_finalize_users($start, $end) {
 function uc_buyingclub_finalize_user($user_id, $start, $end) {
   $query = "SELECT op.title AS title, op.qty AS qty_desired, bop.qty AS qty_given, op.price AS price, o.billing_first_name as first_name ".
     "FROM {uc_orders} o, {uc_order_products} op, {uc_buyingclub_order_products} bop ".
-    "WHERE o.uid=%d AND o.created > %d AND o.created < %d ".
+    "WHERE o.uid=%d AND o.created > %d AND o.created < %d AND o.order_status='pending' ".
       "AND op.order_id = o.order_id AND bop.order_product_id = op.order_product_id";
 
   $query_result = db_query($query, $user_id, $start, $end);
