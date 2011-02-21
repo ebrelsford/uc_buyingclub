@@ -101,16 +101,19 @@ function uc_buyingclub_block($op='list', $delta=0) {
 }
 
 function uc_buyingclub_token_values($type, $object = NULL, $options = array()) {
-  if ($type == 'global') {
+  if ($type == 'order') {
     $period = _uc_buyingclub_get_most_recent_ordering_period();
     $date_format = 'l\, M jS';
-    $tokens['pickup-date'] = '6pm - 9pm on '. format_date($period->pickup, $type='custom', $format=$date_format);
+    $tokens['order-pickup-date'] = '6pm - 9pm on '. format_date($period->pickup, $type='custom', $format=$date_format);
     return $tokens;
   }
 }
+
 function uc_buyingclub_token_list($type = 'all') {
-  if ($type == 'global' || $type == 'all') {
-    $tokens['global']['pickup-date'] = t('The next pickup date');
+  $tokens = array();
+  if ($type == 'order' || $type == 'all') {
+    $tokens['order']['order-pickup-date'] = t('The next pickup date');
+    dvm($tokens);
     return $tokens;
   }
 }
@@ -897,7 +900,7 @@ function _uc_buyingclub_get_ordering_period($start, $end) {
  * Get most recent/current ordering period based on the current time.
  */
 function _uc_buyingclub_get_most_recent_ordering_period() {
-  $query = "SELECT p.start, p.end ".
+  $query = "SELECT p.start, p.end, p.pickup ".
     "FROM {uc_buyingclub_ordering_periods} p ".
     "WHERE p.start < %d ".
     "ORDER BY p.start DESC ".
