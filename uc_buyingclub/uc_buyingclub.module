@@ -488,9 +488,10 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
           'qty' => $order_product_qty_given[$row->order_product_id] + 1,
           'finalized' => time(),
         );
-        // XXX check return value here. also, $update= can just be a string
-        drupal_write_record('uc_buyingclub_order_products', $to_write, array('order_product_id'));
-        $qty_available--;
+        
+        if (drupal_write_record('uc_buyingclub_order_products', $to_write, 'order_product_id') != FALSE ) {
+          $qty_available--;
+        }
       }
     }
   }
