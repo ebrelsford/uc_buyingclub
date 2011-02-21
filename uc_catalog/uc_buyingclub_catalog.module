@@ -4,10 +4,35 @@
  * hook_theme_registry_alter
  */
 function uc_buyingclub_catalog_theme_registry_alter(&$theme_registry) {
-  $originalpath = array_shift($theme_registry['uc_catalog_browse']['theme paths']);
   $modulepath = drupal_get_path('module', 'uc_buyingclub_catalog');
+
+  $originalpath = array_shift($theme_registry['uc_catalog_browse']['theme paths']);
   array_unshift($theme_registry['uc_catalog_browse']['theme paths'], $originalpath, $modulepath);
   $theme_registry['uc_catalog_browse']['function'] = 'theme_uc_buyingclub_catalog_browse';
+
+  $originalpath = array_shift($theme_registry['breadcrumb']['theme paths']);
+  array_unshift($theme_registry['breadcrumb']['theme paths'], $originalpath, $modulepath);
+  $theme_registry['breadcrumb']['function'] = 'theme_uc_buyingclub_catalog_breadcrumb';
+}
+
+function theme_uc_buyingclub_catalog_breadcrumb($breadcrumb) {
+  if (empty($breadcrumb)) {
+    return '';
+  }
+
+  $is_catalog_front = preg_match('|catalog(/0?)?$|', request_uri()) > 0;
+  $is_catalog = preg_match('|catalog/\d+$|', request_uri()) > 0;
+
+  if ($is_catalog_front) {
+    $breadcrumb = array();
+  }
+  else if ($is_catalog) {
+    $breadcrumb = array(
+      l(t('Back to categories'), 'catalog'), 
+    );
+  }
+
+  return '<div class="breadcrumb">' . implode(' » ', $breadcrumb) . '</div>';
 }
 
 /*
