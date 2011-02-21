@@ -476,9 +476,10 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
       "FROM {uc_orders} o, {uc_order_products} op ".
       "WHERE op.order_id=o.order_id ".
         "AND o.created > %d AND o.created < %d ".
+        "AND op.nid=%d ".
         "AND op.data LIKE '%%%s%%' ";
 
-    $query_result = db_query($query, $start, $end, UC_BUYINGCLUB_WOULD_BUY_MORE_LABEL);
+    $query_result = db_query($query, $start, $end, $product_id, UC_BUYINGCLUB_WOULD_BUY_MORE_LABEL);
     if ($query_result) {
       while (($row = db_fetch_object($query_result)) && $qty_available > 0) {
         // find out how much the order-product got and increment
@@ -487,6 +488,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
           'qty' => $order_product_qty_given[$row->order_product_id] + 1,
           'finalized' => time(),
         );
+        // XXX check return value here. also, $update= can just be a string
         drupal_write_record('uc_buyingclub_order_products', $to_write, array('order_product_id'));
         $qty_available--;
       }
