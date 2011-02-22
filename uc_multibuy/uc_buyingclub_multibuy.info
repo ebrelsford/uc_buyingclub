@@ -1,0 +1,9 @@
+; $Id$
+name = Buying Club Multi-buy
+description = Modifications to uc_multibuy for running a buying club
+core = 6.x
+php = 5.0
+package = Buying Club
+dependencies[] = uc_buyingclub
+dependencies[] = uc_multibuy
+

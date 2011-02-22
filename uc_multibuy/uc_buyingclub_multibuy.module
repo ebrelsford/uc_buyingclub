@@ -1,0 +1,141 @@
+<?php
+
+/*
+ * hook_theme_registry_alter
+ */
+function uc_buyingclub_multibuy_theme_registry_alter(&$theme_registry) {
+  $modulepath = drupal_get_path('module', 'uc_buyingclub_multibuy');
+
+  $originalpath = array_shift($theme_registry['uc_multibuy_table']['theme paths']);
+  array_unshift($theme_registry['uc_multibuy_table']['theme paths'], $originalpath, $modulepath);
+  $theme_registry['uc_multibuy_table']['function'] = 'theme_uc_buyingclub_multibuy_table';
+}
+
+/*
+ * change ubercart's multi-buy table to show distributor, too
+ */
+function theme_uc_buyingclub_multibuy_table($products) {
+  return '<div id="uc-multibuy-table">'. drupal_get_form('greenehill_uc_multibuy_table_form', $products). '</div>';
+}
+
+/**
+ * Display products in a TAPIr table in the multibuy format.
+ *
+ * Display image, name, price, and add to cart form with qty and optionally attributes.
+ */
+function greenehill_uc_multibuy_table_form(&$form_state, $products) {
+  $enabled = variable_get('uc_product_field_enabled', array(
+    'image' => 1,
+    'display_price' => 1,
+    'model' => 1,
+    'list_price' => 0,
+    'cost' => 0,
+    'sell_price' => 1,
+    'weight' => 0,
+    'dimensions' => 0,
+    'add_to_cart' => 1,
+  ));
+
+  $columns = uc_product_table_header();
+  $columns['distributor'] = array(
+    'weight' => 5,
+    'cell' => array('data' => t('Distributor'),)
+  );
+  $columns['unit'] = array(
+    'weight' => 5,
+    'cell' => array('data' => t('Unit'),)
+  );
+  drupal_alter('tapir_table_header', $columns, 'uc_product_table');
+  $table = array(
+    '#type' => 'tapir_table',
+    '#attributes' => array(
+      'class' => 'category-products-multibuy',
+    ),
+    '#columns' => $columns,
+    '#rows' => array(),
+  );
+  foreach ($products as $nid) {
+    $data = array();
+    $node = node_load($nid);
+    if ($enabled['image']) {
+      if (module_exists('imagecache')) {
+        if (($field = variable_get('uc_image_'. $node->type, '')) && isset($node->$field) && file_exists($node->{$field}[0]['filepath'])) {
+          $image = $node->{$field}[0];
+          $data['image'] = array('#value' => l(theme('imagecache', 'product_list', $image['filepath'], $image['data']['alt'], $image['data']['title']),
+            $node->field_image_cache[0]['filepath'],
+            array('html' => TRUE, 'attributes' => array('class' => 'thickbox'))));
+        }
+        else {
+          $data['image'] = array('#value' => t('n/a'));
+        }
+      }
+    }
+    $data['name'] = array(
+      '#value' => l($node->title, 'node/'. $node->nid),
+      '#cell_attributes' => array('width' => '100%'),
+    );
+    if ($enabled['list_price']) {
+      $data['list_price'] = array('#value' => uc_currency_format($node->list_price), '#cell_attriubtes' => array('nowrap' => 'nowrap'));
+    }
+    if ($enabled['sell_price']) {
+      $context = array(
+        'location' => 'product-view',
+        'class' => array(
+          'product',
+        ),
+        'subject' => array(
+          'node' => $node,
+        ),
+      );
+      $context['class'][1] = 'display';
+      $context['subject']['field'] = 'sell_price';
+
+      $data['price'] = array('#value' => theme('uc_product_price', $node->sell_price, $context), '#cell_attriubtes' => array('nowrap' => 'nowrap'));
+    }
+
+    $data['distributor'] = array('#value' => node_load($node->field_distributor[0]['nid'])->title,);
+    $data['unit'] = array('#value' => $node->field_unit[0]['value'],);
+
+    if (module_exists('uc_cart') && arg(0) != 'admin' && $enabled['add_to_cart']) {
+      $data['add_to_cart'] = _uc_multibuy_add_form($node);
+
+      // modify to make 'would you buy more' attribute fall below quantity
+      foreach ($data['add_to_cart'] as $key => &$value) {
+        if (strpos($key, 'qty-') !== false) {
+          $value['#weight'] = -98; // make it light!
+        }
+        if (strpos($key, 'attributes-') !== false) {
+          $value['#weight'] = 98; // make it heavy!
+        }
+      }
+
+    }
+    $table[] = $data;
+  }
+
+  if (!count(element_children($table))) {
+    $table[] = array(
+      'name' => array(
+        '#value' => t('No products available.'),
+        '#cell_attributes' => array(
+          'colspan' => 'full',
+        ),
+      ),
+    );
+  }
+
+  $form = array();
+  $form['table'] = $table;
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => variable_get('uc_multibuy_add_all_to_cart_text', t('Add all to cart')),
+    '#id' => 'edit-submit',
+    '#prefix' => '<div class="multibuy-table add-all-to-cart">',
+    '#suffix' => '</div>'
+  );
+
+  $form['#submit'][] = 'uc_multibuy_form_submit';
+  $form['#validate'][] = 'uc_multibuy_form_validate';
+
+  return $form;
+}
