@@ -24,6 +24,35 @@ Drupal.behaviors.ucBuyingClubCatalogFixBeforeSubmit = function(context) {
 }
 
 /*
+ * Make update number of cases to order on finalization form
+ */
+Drupal.behaviors.ucBuyingClubFinalizationFormUpdateCases = function(context) {
+    $(context).find('.ucBuyingClubOverstock:not(.ucBuyingClub-processed), .ucBuyingClubUnitsToOrder:not(.ucBuyingClub-processed)').each(function() {
+        $(this).change(function() {
+            var row = $(this).parents('tr');
+
+            var units_ordered = parseInt(row.find('.ucBuyingClubUnitsOrdered').text());
+            var would_buy_more = parseInt(row.find('.ucBuyingClubWouldBuyMore').text());
+            var case_size = parseInt(row.find('.ucBuyingClubCaseSize').text());
+            var current_overstock = parseInt(row.find('.ucBuyingClubOverstock').val());
+            var units_to_order = parseInt(row.find('.ucBuyingClubUnitsToOrder').val());
+
+            var cases_to_order = units_to_order / case_size;
+            row.find('.ucBuyingClubCasesToOrder').val(cases_to_order);
+
+            if (cases_to_order % 1 !== 0) {
+                // not an even number of cases :/
+                row.find('.ucBuyingClubUnitsToOrder').addClass('invalid-value');
+            }
+            else {
+                row.find('.ucBuyingClubUnitsToOrder').removeClass('invalid-value');
+            }
+        })
+        $(this).addClass('ucBuyingClubUpdateCases-processed');
+    });
+}
+
+/*
  * Confirm before submitting finalization form
  */
 Drupal.behaviors.ucBuyingClubFinalizationFormConfirm = function(context) {

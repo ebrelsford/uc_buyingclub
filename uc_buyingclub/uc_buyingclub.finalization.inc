@@ -33,25 +33,48 @@ function uc_buyingclub_finalization_form($rows) {
       $would_buy_more_qty = $would_buy_more[$row->product_id];
       if ($would_buy_more_qty == NULL) $would_buy_more_qty = 0;
 
+      $ordered_by_members = $row->order_product_qty;
+      $case_size = $row->minimum_order;
+
+      $case_order_suggestion = floor($ordered_by_members / $case_size);
+      $unit_order_suggestion = $case_order_suggestion * $case_size;
+
       $form[$row->product_id]['product_id'] = array('#value' => stripslashes($row->product_id));
       $form[$row->product_id]['product_name'] = array('#value' => stripslashes($row->product_name));
-      $form[$row->product_id]['order_product_qty'] = array('#value' => stripslashes($row->order_product_qty));
-      $form[$row->product_id]['would_buy_more'] = array('#value' => $would_buy_more_qty);
+      $form[$row->product_id]['order_product_qty'] = array(
+        '#value' => stripslashes($ordered_by_members),
+      );
+      $form[$row->product_id]['would_buy_more'] = array(
+        '#value' => $would_buy_more_qty,
+      );
       $form[$row->product_id]['distributor_name'] = array('#value' => stripslashes($row->distributor_name));
-      $form[$row->product_id]['minimum_order'] = array('#value' => stripslashes($row->minimum_order));
+      $form[$row->product_id]['minimum_order'] = array(
+        '#value' => stripslashes($case_size),
+      );
       $form[$row->product_id]['current_overstock_'. $row->product_id] = array(
         '#type' => 'textfield',
         '#default_value' => '0',
         '#maxlength' => 3,
         '#size' => 3,
         '#required' => FALSE,
+        '#attributes' => array('class' => 'ucBuyingClubOverstock'),
       );
       $form[$row->product_id]['ordered_'. $row->product_id] = array(
         '#type' => 'textfield',
-        '#default_value' => '0',
+        '#default_value' => $unit_order_suggestion,
         '#maxlength' => 3,
         '#size' => 3,
         '#required' => FALSE,
+        '#attributes' => array('class' => 'ucBuyingClubUnitsToOrder'),
+      );
+      $form[$row->product_id]['cases_ordered_'. $row->product_id] = array(
+        '#type' => 'textfield',
+        '#default_value' => $case_order_suggestion,
+        '#maxlength' => 3,
+        '#size' => 3,
+        '#required' => FALSE,
+        '#disabled' => TRUE,
+        '#attributes' => array('class' => 'ucBuyingClubCasesToOrder'),
       );
     }
   }
@@ -75,6 +98,7 @@ function uc_buyingclub_finalization_form($rows) {
   );
 
   drupal_add_js(drupal_get_path('module', 'uc_buyingclub') .'/uc_buyingclub.js');
+  drupal_add_css(drupal_get_path('module', 'uc_buyingclub') .'/uc_buyingclub.css');
   return $form;
 }
 
@@ -90,11 +114,21 @@ function theme_uc_buyingclub_finalization_form($form) {
       $row = array();
       $row[] = array('data' => drupal_render($form[$key]['product_name']));
       $row[] = array('data' => drupal_render($form[$key]['distributor_name']));
-      $row[] = array('data' => drupal_render($form[$key]['order_product_qty']));
-      $row[] = array('data' => drupal_render($form[$key]['would_buy_more']));
-      $row[] = array('data' => drupal_render($form[$key]['minimum_order']));
+      $row[] = array(
+        'data' => drupal_render($form[$key]['order_product_qty']),
+        'class' => 'ucBuyingClubUnitsOrdered',
+      );
+      $row[] = array(
+        'data' => drupal_render($form[$key]['would_buy_more']),
+        'class' => 'ucBuyingClubWouldBuyMore',
+      );
+      $row[] = array(
+        'data' => drupal_render($form[$key]['minimum_order']),
+        'class' => 'ucBuyingClubCaseSize',
+      );
       $row[] = array('data' => drupal_render($form[$key]['current_overstock_' . $key]), 'class' => 'textfield');
       $row[] = array('data' => drupal_render($form[$key]['ordered_' . $key]), 'class' => 'textfield');
+      $row[] = array('data' => drupal_render($form[$key]['cases_ordered_' . $key]), 'class' => 'textfield');
       $rows[] = $row;
       $form[$key]['#printed'] = TRUE;
       $form[$key]['product_id']['#printed'] = TRUE; // avoid re-rendering these
@@ -106,9 +140,10 @@ function theme_uc_buyingclub_finalization_form($form) {
   $header[] = t('Distributor');
   $header[] = t('Ordered by Members');
   $header[] = t('Would Buy More');
-  $header[] = t('Minimum Order');
-  $header[] = array('data' => t('Qty Current Overstock'));
-  $header[] = array('data' => t('Qty to Order'));
+  $header[] = t('Case Size (units)');
+  $header[] = array('data' => t('Current Overstock (units)'));
+  $header[] = array('data' => t('Qty to Order (units)'));
+  $header[] = array('data' => t('Qty to Order (cases)'));
 
   // show which ordering period we're using
   $start = (int)$form['start']['#value'];

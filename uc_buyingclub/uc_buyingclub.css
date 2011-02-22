@@ -9,3 +9,7 @@
 .uc_buyingclub_member_name {
     font-size: 110%;
 }
+
+.invalid-value {
+    background-color: pink;
+}
