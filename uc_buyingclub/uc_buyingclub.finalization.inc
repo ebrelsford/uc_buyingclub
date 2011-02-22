@@ -39,6 +39,13 @@ function uc_buyingclub_finalization_form($rows) {
       $form[$row->product_id]['would_buy_more'] = array('#value' => $would_buy_more_qty);
       $form[$row->product_id]['distributor_name'] = array('#value' => stripslashes($row->distributor_name));
       $form[$row->product_id]['minimum_order'] = array('#value' => stripslashes($row->minimum_order));
+      $form[$row->product_id]['current_overstock_'. $row->product_id] = array(
+        '#type' => 'textfield',
+        '#default_value' => '0',
+        '#maxlength' => 3,
+        '#size' => 3,
+        '#required' => FALSE,
+      );
       $form[$row->product_id]['ordered_'. $row->product_id] = array(
         '#type' => 'textfield',
         '#default_value' => '0',
@@ -86,6 +93,7 @@ function theme_uc_buyingclub_finalization_form($form) {
       $row[] = array('data' => drupal_render($form[$key]['order_product_qty']));
       $row[] = array('data' => drupal_render($form[$key]['would_buy_more']));
       $row[] = array('data' => drupal_render($form[$key]['minimum_order']));
+      $row[] = array('data' => drupal_render($form[$key]['current_overstock_' . $key]), 'class' => 'textfield');
       $row[] = array('data' => drupal_render($form[$key]['ordered_' . $key]), 'class' => 'textfield');
       $rows[] = $row;
       $form[$key]['#printed'] = TRUE;
@@ -99,6 +107,7 @@ function theme_uc_buyingclub_finalization_form($form) {
   $header[] = t('Ordered by Members');
   $header[] = t('Would Buy More');
   $header[] = t('Minimum Order');
+  $header[] = array('data' => t('Qty Current Overstock'));
   $header[] = array('data' => t('Qty to Order'));
 
   // show which ordering period we're using
@@ -125,6 +134,14 @@ function uc_buyingclub_finalization_form_validate($form, &$form_state) {
         form_set_error('', t('Orders must be numbers'));
       }
     }
+    if (stripos($key, 'current_overstock_') === 0) {
+      if ($value < 0) {
+        form_set_error('', t('Negative overstocks are not allowed'));
+      }
+      if (!is_numeric($value)) {
+        form_set_error('', t('Overstocks must be numbers'));
+      }
+    }
   }
 }
 
@@ -133,7 +150,8 @@ function uc_buyingclub_finalization_form_validate($form, &$form_state) {
  */
 function uc_buyingclub_finalization_form_submit($form_id, $form) {
   $form_values = $form['values'];
-  $prefix = 'ordered_';
+  $overstock_prefix = 'current_overstock_';
+  $ordered_prefix = 'ordered_';
   $start = $form_values['start'];
   $end = $form_values['end'];
 
@@ -141,12 +159,13 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
 
   // finalize each product submitted with the quantity ordered as indicated
   foreach ($form_values as $key => $value) {
-    if (stripos($key, $prefix) === 0) {
-      $product_id = substr($key, strlen($prefix));
+    if (stripos($key, $ordered_prefix) === 0) {
+      $product_id = substr($key, strlen($ordered_prefix));
       $qty_ordered = $value;
+      $qty_overstock = $form_values[$overstock_prefix . strval($product_id)];
       $qty_would_buy_more = $would_buy_more[$product_id];
 
-      uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $start, $end);
+      uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $qty_overstock, $start, $end);
     }
   }
 
@@ -163,12 +182,14 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
  *    The nid of the product node
  * @param $qty_ordered
  *    The quantity ordered through the finalization form
+ * @param $qty_current_overstock
+ *    The quantity that is currently at hand--should be given to members but NOT ordered from distributors
  * @param $start
  *    The start of the ordering period (in seconds)
  * @param $end
  *    The end of the ordering period (in seconds)
  */
-function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $start, $end) {
+function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $qty_current_overstock, $start, $end) {
   /*
    * first, give everyone who ordered this product their share
    */
@@ -180,7 +201,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
 
   $query_result = db_query($query, $product_id, $start, $end);
 
-  $qty_available = $qty_ordered;
+  $qty_available = $qty_ordered + $qty_current_overstock;
   $order_product_qty_given = array();
   if ($query_result) {
     while ($row = db_fetch_object($query_result)) {
