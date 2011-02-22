@@ -92,7 +92,6 @@ function uc_buyingclub_token_list($type = 'all') {
   $tokens = array();
   if ($type == 'order' || $type == 'all') {
     $tokens['order']['order-pickup-date'] = t('The next pickup date');
-    dvm($tokens);
     return $tokens;
   }
 }
