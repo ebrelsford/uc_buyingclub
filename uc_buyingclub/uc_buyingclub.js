@@ -24,7 +24,7 @@ Drupal.behaviors.ucBuyingClubCatalogFixBeforeSubmit = function(context) {
 }
 
 /*
- * Make update number of cases to order on finalization form
+ * update number of cases to order and expected overstock on finalization form
  */
 Drupal.behaviors.ucBuyingClubFinalizationFormUpdateCases = function(context) {
     $(context).find('.ucBuyingClubOverstock:not(.ucBuyingClub-processed), .ucBuyingClubUnitsToOrder:not(.ucBuyingClub-processed)').each(function() {
@@ -37,16 +37,21 @@ Drupal.behaviors.ucBuyingClubFinalizationFormUpdateCases = function(context) {
             var current_overstock = parseInt(row.find('.ucBuyingClubOverstock').val());
             var units_to_order = parseInt(row.find('.ucBuyingClubUnitsToOrder').val());
 
+            // update cases field
             var cases_to_order = units_to_order / case_size;
             row.find('.ucBuyingClubCasesToOrder').val(cases_to_order);
-
             if (cases_to_order % 1 !== 0) {
-                // not an even number of cases :/
+                // not an even number of cases
                 row.find('.ucBuyingClubUnitsToOrder').addClass('invalid-value');
             }
             else {
                 row.find('.ucBuyingClubUnitsToOrder').removeClass('invalid-value');
             }
+
+            // update expected overstock field
+            var expected_overstock = units_to_order - units_ordered - would_buy_more + current_overstock;
+            if (expected_overstock < 0) expected_overstock = 0;
+            row.find('.ucBuyingClubExpectedOverstock').val(expected_overstock);
         })
         $(this).addClass('ucBuyingClubUpdateCases-processed');
     });

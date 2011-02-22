@@ -36,8 +36,11 @@ function uc_buyingclub_finalization_form($rows) {
       $ordered_by_members = $row->order_product_qty;
       $case_size = $row->minimum_order;
 
+      // let's make a conservative suggestion of how much to order
       $case_order_suggestion = floor($ordered_by_members / $case_size);
       $unit_order_suggestion = $case_order_suggestion * $case_size;
+      $expected_overstock = $unit_order_suggestion - $ordered_by_members - $would_buy_more_qty;
+      if ($expected_overstock < 0) $expected_overstock = 0;
 
       $form[$row->product_id]['product_id'] = array('#value' => stripslashes($row->product_id));
       $form[$row->product_id]['product_name'] = array('#value' => stripslashes($row->product_name));
@@ -75,6 +78,15 @@ function uc_buyingclub_finalization_form($rows) {
         '#required' => FALSE,
         '#disabled' => TRUE,
         '#attributes' => array('class' => 'ucBuyingClubCasesToOrder'),
+      );
+      $form[$row->product_id]['expected_overstock_'. $row->product_id] = array(
+        '#type' => 'textfield',
+        '#default_value' => $expected_overstock,
+        '#maxlength' => 3,
+        '#size' => 3,
+        '#required' => FALSE,
+        '#disabled' => TRUE,
+        '#attributes' => array('class' => 'ucBuyingClubExpectedOverstock'),
       );
     }
   }
@@ -129,6 +141,7 @@ function theme_uc_buyingclub_finalization_form($form) {
       $row[] = array('data' => drupal_render($form[$key]['current_overstock_' . $key]), 'class' => 'textfield');
       $row[] = array('data' => drupal_render($form[$key]['ordered_' . $key]), 'class' => 'textfield');
       $row[] = array('data' => drupal_render($form[$key]['cases_ordered_' . $key]), 'class' => 'textfield');
+      $row[] = array('data' => drupal_render($form[$key]['expected_overstock_' . $key]), 'class' => 'textfield');
       $rows[] = $row;
       $form[$key]['#printed'] = TRUE;
       $form[$key]['product_id']['#printed'] = TRUE; // avoid re-rendering these
@@ -144,6 +157,7 @@ function theme_uc_buyingclub_finalization_form($form) {
   $header[] = array('data' => t('Current Overstock (units)'));
   $header[] = array('data' => t('Qty to Order (units)'));
   $header[] = array('data' => t('Qty to Order (cases)'));
+  $header[] = array('data' => t('Expected Overstock (units)'));
 
   // show which ordering period we're using
   $start = (int)$form['start']['#value'];

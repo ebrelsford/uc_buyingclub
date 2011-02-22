@@ -11,5 +11,6 @@
 }
 
 .invalid-value {
-    background-color: pink;
+    background-color: #FFCCCC;
+    border: 1px solid #DD7777;
 }
