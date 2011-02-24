@@ -60,10 +60,10 @@ function uc_buyingclub_menu() {
     'file' => 'uc_buyingclub.pages.inc',
   );
 
-  $items['buyingclub/view/finalized/by_distributor/csv'] = array(
+  $items['buyingclub/export/finalized/distributor/%/%/csv'] = array(
     'title' => "Buying Club: View finalized orders by distributor",
     'access arguments' => array('administer uc_buyingclub'),
-    //'page arguments' => array(3, 2),
+    'page arguments' => array(4, 5),
     'type' => MENU_CALLBACK,
     'page callback' => 'uc_buyingclub_download_finalized',
   );
@@ -252,13 +252,18 @@ function uc_buyingclub_download_finalized($ordering_period_id=3, $distributor_id
   $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
   $minimum_order_table = $minimum_order_db_info['table'];
   $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
+
+  $unit_db_info = content_database_info(content_fields('field_unit')); 
+  $unit_table = $unit_db_info['table'];
+  $unit_column = $unit_db_info['columns']['value']['column'];
   
-  $query = "SELECT p.title AS 'product', ubp.qty_ordered AS `total ordered`, ctd2.". $minimum_order_column ." AS `minimum order` ".
-    "FROM {uc_buyingclub_products} ubp, {uc_products} up, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2 ".
+  $query = "SELECT p.title AS 'item', ctd2.". $minimum_order_column ." AS `bulk req`, ctd3.". $unit_column ." AS `unit`, up.cost * ctd2.". $minimum_order_column ." AS `cast cost`, ubp.qty_ordered / ctd2.". $minimum_order_column ." AS `cases ordered`, up.cost * ubp.qty_ordered AS `total cost` ".
+    "FROM {uc_buyingclub_products} ubp, {uc_products} up, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2, {". $unit_table ."} ctd3 ".
     "WHERE ubp.product_id = p.nid ".
     "AND ctd.vid = p.vid ".
     "AND ctd.". $distributor_column ." = %d ".
     "AND ctd2.vid = p.vid ".
+    "AND ctd3.vid = p.vid ".
     "AND ubp.ordering_period_id = %d ".
     "GROUP BY p.nid ".
     "ORDER BY d.title, p.title";
@@ -270,9 +275,12 @@ function uc_buyingclub_download_finalized($ordering_period_id=3, $distributor_id
 
   // output as CSV
   $header = array(
-    'Product',
-    'Quantity to order',
-    'Minimum order',
+    'item',
+    'bulk req',
+    'unit',
+    'case cost',
+    'cases ordered',
+    'total cost',
   );
   print implode(',', $header) ."\r\n";
    
@@ -311,7 +319,7 @@ function _uc_buyingclub_get_ordering_period($start, $end) {
  * Get most recent/current ordering period based on the current time.
  */
 function _uc_buyingclub_get_most_recent_ordering_period() {
-  $query = "SELECT p.start, p.end, p.pickup ".
+  $query = "SELECT p.start, p.end, p.pickup, p.ordering_period_id ".
     "FROM {uc_buyingclub_ordering_periods} p ".
     "WHERE p.start < %d ".
     "ORDER BY p.start DESC ".

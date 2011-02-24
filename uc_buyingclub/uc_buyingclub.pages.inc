@@ -137,6 +137,7 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
 
   // find start of most recent ordering period
   $period = _uc_buyingclub_get_most_recent_ordering_period();
+  $ordering_period_id = $period->ordering_period_id;
   $start = $period->start;
   $end = $period->end;
 
@@ -145,7 +146,7 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
   $distributor_table = $distributor_db_info['table'];
   $distributor_column = $distributor_db_info['columns']['nid']['column'];
 
-  $query = "SELECT d.title AS distributor_name, p.title AS product_name, o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, SUM(bop.qty) AS qty_ordered ".
+  $query = "SELECT d.title AS distributor_name, p.title AS product_name, o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, SUM(bop.qty) AS qty_ordered, d.nid AS distributor_id ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {uc_buyingclub_order_products} bop ".
     "WHERE p.nid=op.nid AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
@@ -183,7 +184,10 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
 
       // might also have a new distributor
       if ($row['distributor_name'] !== $current_distributor_name) {
-        $out .= '<div class="uc_buyingclub_distributor_name">'. $row['distributor_name'] .'</div>';
+        $distributor_id = $row['distributor_id'];
+        $out .= '<div class="uc_buyingclub_distributor_name">'. $row['distributor_name'] .'&nbsp;(';
+        $out .= l('download sheet for this distributor', 'buyingclub/export/finalized/distributor/'. $ordering_period_id .'/'. $distributor_id .'/csv');
+        $out .= ')</div>';
         $current_distributor_name = $row['distributor_name'];
       }
 
