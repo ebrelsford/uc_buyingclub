@@ -268,9 +268,22 @@ function uc_buyingclub_view_reports() {
 
   $out = _uc_buyingclub_get_ordering_period_header($period->start, $period->end);
 
-  $out .= '<div id="uc_buyingclub_download_grid_view">';
+  $out .= '<ul>';
+  $out .= '<li>';
   $out .= l(t('Download grid view'), 'buyingclub/export/grid/'. $period->ordering_period_id .'/csv');
-  $out .= '</div>';
+  $out .= '</li>';
+
+  $out .= '<li>';
+  $out .= l(t('View overstock'), 'buyingclub/view/overstock/');
+  $out .= '</li>';
+
+  $out .= '<li>';
+  $out .= l(t('View finalized orders, by member'), 'buyingclub/view/finalized/by_user');
+  $out .= '</li>';
+
+  $out .= '<li>';
+  $out .= l(t('View finalized orders, by distributor'), 'buyingclub/view/finalized/by_distributor');
+  $out .= '</li>';
 
   return $out;
 }

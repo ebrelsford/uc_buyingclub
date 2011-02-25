@@ -46,7 +46,7 @@ function uc_buyingclub_menu() {
 
   $items['buyingclub/view/finalized/by_user'] = array(
     'title' => "Buying Club: View finalized orders by user",
-    'access arguments' => array('administer uc_buyingclub'),
+    'access arguments' => array('administer uc_buyingclub', 'access uc_buyingclub reports'),
     'type' => MENU_CALLBACK,
     'page callback' => 'uc_buyingclub_view_finalized_orders_by_user',
     'file' => 'uc_buyingclub.pages.inc',
@@ -54,7 +54,7 @@ function uc_buyingclub_menu() {
 
   $items['buyingclub/view/finalized/by_distributor'] = array(
     'title' => "Buying Club: View finalized orders by distributor",
-    'access arguments' => array('administer uc_buyingclub'),
+    'access arguments' => array('administer uc_buyingclub', 'access uc_buyingclub reports'),
     'type' => MENU_CALLBACK,
     'page callback' => 'uc_buyingclub_view_finalized_orders_by_distributor',
     'file' => 'uc_buyingclub.pages.inc',
@@ -62,7 +62,7 @@ function uc_buyingclub_menu() {
 
   $items['buyingclub/view/overstock'] = array(
     'title' => "Buying Club: View expected overstock",
-    'access arguments' => array('administer uc_buyingclub'),
+    'access arguments' => array('administer uc_buyingclub', 'access uc_buyingclub reports'),
     'type' => MENU_CALLBACK,
     'page callback' => 'uc_buyingclub_view_overstock',
     'file' => 'uc_buyingclub.pages.inc',
@@ -78,7 +78,7 @@ function uc_buyingclub_menu() {
 
   $items['buyingclub/view/reports'] = array(
     'title' => "Buying Club: View reports",
-    'access arguments' => array('access uc_buyingclub reports'),
+    'access arguments' => array('administer uc_buyingclub', 'access uc_buyingclub reports'),
     'type' => MENU_CALLBACK,
     'page callback' => 'uc_buyingclub_view_reports',
     'file' => 'uc_buyingclub.pages.inc',
