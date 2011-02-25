@@ -262,6 +262,19 @@ function uc_buyingclub_view_overstock() {
   return $out . theme_table(array('Item', 'Cost', 'Member Price', 'Expected Overstock', 'Total Cost'), $data);
 }
 
+function uc_buyingclub_view_reports() {
+  // find start of most recent ordering period
+  $period = _uc_buyingclub_get_most_recent_ordering_period();
+
+  $out = _uc_buyingclub_get_ordering_period_header($period->start, $period->end);
+
+  $out .= '<div id="uc_buyingclub_download_grid_view">';
+  $out .= l(t('Download grid view'), 'buyingclub/export/grid/'. $period->ordering_period_id .'/csv');
+  $out .= '</div>';
+
+  return $out;
+}
+
 function _uc_buyingclub_get_ordering_period_header($start, $end) {
   $date_format = "ga l\, M jS Y";
   return 'Orders placed from '. 

@@ -22,7 +22,7 @@ function uc_buyingclub_help($path, $arg) {
 }
 
 function uc_buyingclub_perm() {
-  return array('access uc_buyingclub', 'create uc_buyingclub', 'administer uc_buyingclub');
+  return array('access uc_buyingclub', 'create uc_buyingclub', 'administer uc_buyingclub', 'access uc_buyingclub reports');
 }
 
 function uc_buyingclub_menu() {
@@ -73,6 +73,14 @@ function uc_buyingclub_menu() {
     'access arguments' => array('administer uc_buyingclub'),
     'type' => MENU_CALLBACK,
     'page callback' => 'uc_buyingclub_view_ordering_periods',
+    'file' => 'uc_buyingclub.pages.inc',
+  );
+
+  $items['buyingclub/view/reports'] = array(
+    'title' => "Buying Club: View reports",
+    'access arguments' => array('access uc_buyingclub reports'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_view_reports',
     'file' => 'uc_buyingclub.pages.inc',
   );
 
