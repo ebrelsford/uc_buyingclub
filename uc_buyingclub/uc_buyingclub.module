@@ -60,6 +60,14 @@ function uc_buyingclub_menu() {
     'file' => 'uc_buyingclub.pages.inc',
   );
 
+  $items['buyingclub/view/overstock'] = array(
+    'title' => "Buying Club: View expected overstock",
+    'access arguments' => array('administer uc_buyingclub'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_view_overstock',
+    'file' => 'uc_buyingclub.pages.inc',
+  );
+
   $items['buyingclub/view/periods'] = array(
     'title' => "Buying Club: View ordering periods",
     'access arguments' => array('administer uc_buyingclub'),

@@ -33,10 +33,7 @@ function uc_buyingclub_view_finalized_orders() {
   $query_result = db_query($query, $start, $end);
 
   // build output
-  $date_format = "ga l\, M jS Y";
-  $out = 'Orders placed from '. 
-    format_date($start, $type='custom', $format=$date_format) .' to '. 
-    format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
+  $out = _uc_buyingclub_get_ordering_period_header($start, $end);
 
   // default output
   if (!$query_result || $query_result->num_rows === 0) {
@@ -82,10 +79,7 @@ function uc_buyingclub_view_finalized_orders_by_user() {
   $query_result = db_query($query, $start, $end);
 
   // build output
-  $date_format = "ga l\, M jS Y";
-  $out = 'Orders placed from '. 
-    format_date($start, $type='custom', $format=$date_format) .' to '. 
-    format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
+  $out = _uc_buyingclub_get_ordering_period_header($start, $end);
 
   // default output
   if (!$query_result || $query_result->num_rows === 0) {
@@ -158,10 +152,7 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
   $query_result = db_query($query, $start, $end);
 
   // build output
-  $date_format = "ga l\, M jS Y";
-  $out = 'Orders placed from '. 
-    format_date($start, $type='custom', $format=$date_format) .' to '. 
-    format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
+  $out = _uc_buyingclub_get_ordering_period_header($start, $end);
 
   // default output
   if (!$query_result || $query_result->num_rows === 0) {
@@ -237,4 +228,43 @@ function uc_buyingclub_view_ordering_periods() {
 
   // theme table
   return theme_table(array('Start', 'End'), $data);
+}
+
+function uc_buyingclub_view_overstock() {
+  // find start of most recent ordering period
+  $period = _uc_buyingclub_get_most_recent_ordering_period();
+
+  $query = "SELECT p.title as 'item', pr.cost as 'cost', pr.sell_price as 'member price', bp.qty_overstock as 'expected overstock' ".
+    "FROM node p, uc_products pr, uc_buyingclub_products bp ".
+    "WHERE pr.nid=p.nid and bp.product_id=p.nid AND bp.ordering_period_id=%d ".
+    "ORDER BY p.title";
+
+  $query_result = db_query($query, $period->ordering_period_id);
+
+  $out = _uc_buyingclub_get_ordering_period_header($period->start, $period->end);
+
+  if ($query_result) {
+    $overall_cost = 0;
+    while ($row = db_fetch_array($query_result)) {
+      $total_cost = $row['cost'] * $row['expected overstock'];
+      $overall_cost += $total_cost;
+      $row[] = $total_cost;
+
+      $data[] = $row;
+    }
+    $data[] = array('','','', 'total', $overall_cost);
+  }
+  else {
+    return $out ."No orders or overstock to show";
+  }
+
+  // theme table
+  return $out . theme_table(array('Item', 'Cost', 'Member Price', 'Expected Overstock', 'Total Cost'), $data);
+}
+
+function _uc_buyingclub_get_ordering_period_header($start, $end) {
+  $date_format = "ga l\, M jS Y";
+  return 'Orders placed from '. 
+    format_date($start, $type='custom', $format=$date_format) .' to '. 
+    format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
 }
