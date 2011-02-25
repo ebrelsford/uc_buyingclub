@@ -27,21 +27,26 @@ function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) 
 
   $result = db_query($query, $distributor_id, $ordering_period_id);
 
-  drupal_set_header('Content-Type: text/csv');
-  drupal_set_header('Content-Disposition: attachment; filename=test.csv');
+  while ($row = db_fetch_array($result)) {
+    $table[] = $row;
+  }
 
   // output as CSV
-  $header = array(
-    'item',
-    'bulk req',
-    'unit',
-    'case cost',
-    'cases ordered',
-    'total cost',
-  );
-  print implode(',', $header) ."\r\n";
-   
-  while ($row = db_fetch_array($result)) {
+  _uc_buyingclub_export_table_as_csv('for_distributor.csv', array('item', 'bulk req', 'unit', 'case cost', 'cases ordered', 'total cost',), $table);
+}
+
+function uc_buyingclub_download_grid($ordering_period_id) {
+}
+
+function _uc_buyingclub_export_table_as_csv($name, $header=NULL, $table) {
+  drupal_set_header('Content-Type: text/csv');
+  drupal_set_header('Content-Disposition: attachment; filename='. $name);
+
+  if ($header) {
+    print implode(',', $header) ."\r\n";
+  }
+
+  foreach ($table as $row) {
     foreach ($row as $value) {
       $values[] = '"' . str_replace('"', '""', decode_entities(strip_tags($value))) . '"'; 
     }
@@ -49,4 +54,3 @@ function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) 
     unset($values);
   }
 }
-
