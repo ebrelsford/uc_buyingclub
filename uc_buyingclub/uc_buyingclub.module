@@ -84,6 +84,14 @@ function uc_buyingclub_menu() {
     'file' => 'uc_buyingclub.export.inc',
   );
 
+  $items['buyingclub/export/grid/%/csv'] = array(
+    'access arguments' => array('administer uc_buyingclub'),
+    'page arguments' => array(3),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_download_grid',
+    'file' => 'uc_buyingclub.export.inc',
+  );
+
   return $items;
 }
 
