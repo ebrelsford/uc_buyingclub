@@ -1,0 +1,7 @@
+<?php
+
+function uc_buyingclub_product_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'buyingclubproduct_node_form') { // TODO make configurable, based on product class
+    drupal_add_js(drupal_get_path('module', 'uc_buyingclub_product') .'/uc_buyingclub_product.js');
+  }
+}
