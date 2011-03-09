@@ -21,7 +21,7 @@ function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) 
     "AND ctd.". $distributor_column ." = %d ".
     "AND ctd2.vid = p.vid ".
     "AND ctd3.vid = p.vid ".
-    "AND ubp.ordering_period_id = %d ".
+    "AND ubp.ordering_period_id = %d AND up.nid=p.nid".
     "GROUP BY p.nid ".
     "ORDER BY d.title, p.title";
 
