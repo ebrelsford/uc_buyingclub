@@ -277,9 +277,9 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $category_sty
 }
 
 function _uc_buyingclub_download_invoices_get_order_details($order_id) {
-  $query = "SELECT p.title as name, unit_table.field_unit_value as unit, bop.qty as qty, pr.list_price as price, td.name as category ".
-    "FROM node p, uc_products pr, uc_order_products op, uc_orders o, uc_buyingclub_order_products bop, content_field_unit unit_table, term_node tn, term_data td  ".
-    "WHERE pr.nid=p.nid AND op.nid = p.nid AND op.order_id=o.order_id AND bop.order_product_id=op.order_product_id AND o.order_id=%d AND unit_table.vid=p.vid  ".
+  $query = "SELECT p.title as name, unit_table.field_unit_value as unit, bop.qty as qty, op.price as price, td.name as category ".
+    "FROM node p, uc_order_products op, uc_orders o, uc_buyingclub_order_products bop, content_field_unit unit_table, term_node tn, term_data td  ".
+    "WHERE op.nid = p.nid AND op.order_id=o.order_id AND bop.order_product_id=op.order_product_id AND o.order_id=%d AND unit_table.vid=p.vid  ".
     "AND tn.nid=p.nid AND td.tid=tn.tid ".
     "ORDER BY td.name, p.title";
 
