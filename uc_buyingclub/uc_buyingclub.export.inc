@@ -296,7 +296,7 @@ function _uc_buyingclub_download_invoices_get_orders($ordering_period_id) {
   $query = "SELECT o.order_id, o.primary_email as email, o.billing_first_name as first, o.billing_last_name as last, o.billing_phone as phone ".
     "FROM uc_orders o, uc_buyingclub_ordering_periods ordering_period ".
     "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
-    "AND ordering_period.ordering_period_id = %d ".
+    "AND ordering_period.ordering_period_id = %d AND (o.order_status='pending' OR o.order_status='completed') ".
     "ORDER BY o.billing_last_name, o.billing_first_name ";
 
   $result = db_query($query, $ordering_period_id);
