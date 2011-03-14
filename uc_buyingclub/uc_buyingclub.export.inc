@@ -35,6 +35,26 @@ function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) 
   _uc_buyingclub_export_table_as_csv('for_distributor.csv', array('item', 'bulk req', 'unit', 'case cost', 'cases ordered', 'total cost',), $table);
 }
 
+/*
+ * Download a sign-in sheet that numbers orders and gives the name of the person who placed the order.
+ */
+function uc_buyingclub_download_order_list($ordering_period_id) {
+  $query = "SELECT o.billing_first_name as first, o.billing_last_name as last ".
+    "FROM uc_orders o, uc_buyingclub_ordering_periods ordering_period ".
+    "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
+    "AND ordering_period.ordering_period_id=%d  AND (o.order_status = 'completed' OR o.order_status = 'pending') ".
+    "ORDER BY o.billing_last_name, o.billing_first_name";
+
+  $result = db_query($query, $ordering_period_id);
+  $new_order_id = 1;
+  while ($obj = db_fetch_object($result)) {
+    $orders[] = array($new_order_id, $obj->last, $obj->first,);
+    $new_order_id++;
+  }
+
+  _uc_buyingclub_export_table_as_csv('order_list_'. date('Ymd') .'.csv', array('order', 'last', 'first'), $orders);
+}
+
 function uc_buyingclub_download_grid($ordering_period_id) {
   $products = _uc_buyingclub_download_grid_get_ordered_products($ordering_period_id);
 

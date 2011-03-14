@@ -108,6 +108,14 @@ function uc_buyingclub_menu() {
     'file' => 'uc_buyingclub.export.inc',
   );
 
+  $items['buyingclub/export/order_list/%/csv'] = array(
+    'access arguments' => array('access uc_buyingclub reports'),
+    'page arguments' => array(3),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_download_order_list',
+    'file' => 'uc_buyingclub.export.inc',
+  );
+
   return $items;
 }
 
