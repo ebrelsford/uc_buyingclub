@@ -40,7 +40,7 @@ function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) 
  */
 function uc_buyingclub_download_order_list($ordering_period_id) {
   $query = "SELECT o.billing_first_name as first, o.billing_last_name as last ".
-    "FROM uc_orders o, uc_buyingclub_ordering_periods ordering_period ".
+    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods} ordering_period ".
     "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
     "AND ordering_period.ordering_period_id=%d  AND (o.order_status = 'completed' OR o.order_status = 'pending') ".
     "ORDER BY o.billing_last_name, o.billing_first_name";
@@ -278,7 +278,7 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $category_sty
 
 function _uc_buyingclub_download_invoices_get_order_details($order_id) {
   $query = "SELECT p.title as name, unit_table.field_unit_value as unit, bop.qty as qty, op.price as price, td.name as category ".
-    "FROM node p, uc_order_products op, uc_orders o, uc_buyingclub_order_products bop, content_field_unit unit_table, term_node tn, term_data td  ".
+    "FROM {node} p, {uc_order_products} op, {uc_orders} o, {uc_buyingclub_order_products} bop, {content_field_unit} unit_table, {term_node} tn, {term_data} td  ".
     "WHERE op.nid = p.nid AND op.order_id=o.order_id AND bop.order_product_id=op.order_product_id AND o.order_id=%d AND unit_table.vid=p.vid  ".
     "AND tn.nid=p.nid AND td.tid=tn.tid ".
     "ORDER BY td.name, p.title";
@@ -294,7 +294,7 @@ function _uc_buyingclub_download_invoices_get_order_details($order_id) {
 
 function _uc_buyingclub_download_invoices_get_orders($ordering_period_id) {
   $query = "SELECT o.order_id, o.primary_email as email, o.billing_first_name as first, o.billing_last_name as last, o.billing_phone as phone ".
-    "FROM uc_orders o, uc_buyingclub_ordering_periods ordering_period ".
+    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods ordering_period} ".
     "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
     "AND ordering_period.ordering_period_id = %d AND (o.order_status='pending' OR o.order_status='completed') ".
     "ORDER BY o.billing_last_name, o.billing_first_name ";
