@@ -285,6 +285,10 @@ function uc_buyingclub_view_reports() {
   $out .= l(t('View finalized orders, by distributor'), 'buyingclub/view/finalized/by_distributor');
   $out .= '</li>';
 
+  $out .= '<li>';
+  $out .= l(t('Download invoices'), 'buyingclub/export/invoices/'. $period->ordering_period_id .'/xls');
+  $out .= '</li>';
+
   return $out;
 }
 

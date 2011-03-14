@@ -80,6 +80,213 @@ function uc_buyingclub_download_grid($ordering_period_id) {
 }
 
 /*
+ * Get invoices for the given ordering period as an excel file
+ */
+function uc_buyingclub_download_invoices($ordering_period_id) {
+  require_once 'Spreadsheet/Excel/Writer.php';
+
+  $workbook = new Spreadsheet_Excel_Writer();
+
+  $workbook->send('buyingclub_invoices_'. date('Ymd') .'.xls');
+
+  $header_label_format =& $workbook->addFormat(array(
+    'pattern'=>1,
+    'fgcolor'=>23,
+    'bottom'=>1,
+  ));
+
+  $header_value_format =& $workbook->addFormat(array(
+    'bottom'=>1,
+    'align'=>'left',
+  ));
+
+  $details_category_style =& $workbook->addFormat(array(
+    'pattern'=>1,
+    'fgcolor'=>22,
+  ));
+
+  $details_item_style =& $workbook->addFormat(array(
+    'bottom'=>1,
+    'right'=>1,
+  ));
+
+  $details_item_money_style =& $workbook->addFormat(array(
+    'bottom'=>1,
+    'right'=>1,
+  ));
+  $details_item_money_style->setNumFormat('$#,##0.00');
+
+  $details_total_style =& $workbook->addFormat(array(
+    'pattern'=>1,
+    'fgcolor'=>23,
+  ));
+
+  $details_total_money_style =& $workbook->addFormat(array(
+    'pattern'=>1,
+    'fgcolor'=>23,
+  ));
+  $details_total_money_style->setNumFormat('$#,##0.00');
+
+  $worksheet =& $workbook->addWorksheet('invoices');
+
+  $worksheet->setColumn(0, 0, 10010);
+  $worksheet->setColumn(1, 1, 0x000D);
+  $worksheet->setColumn(2, 2, 0x000D);
+  $worksheet->setColumn(3, 3, 0x000D);
+  $worksheet->setColumn(4, 4, 0x000D);
+  $worksheet->hideGridlines();
+
+  $row = 0;
+  $new_order_id = 1;
+  $breaks = array();
+  foreach (_uc_buyingclub_download_invoices_get_orders($ordering_period_id) as $order) {
+    $row = _uc_buyingclub_download_invoices_write_header($new_order_id, $order->first, $order->last, $order->email, $order->phone, $header_label_format, $header_value_format, &$worksheet, &$row);
+    $row = _uc_buyingclub_download_invoices_write_details($order->order_id, $details_category_style, $details_item_style, $details_item_money_style, $details_total_style, $details_item_money_style, &$worksheet, &$row);
+
+    $breaks[] = $row+1;
+    $row++;
+    $new_order_id++;
+  }
+
+  $worksheet->setHPagebreaks($breaks);
+  $workbook->close();
+}
+
+function _uc_buyingclub_download_invoices_write_header($id, $first, $last, $email, $phone, $label_format, $value_format, &$sheet, &$row) {
+
+  $sheet->write($row, 0, 'Greene Hill Food Co-op');
+  $sheet->write($row, 1, 'Order Number', $label_format);
+  $sheet->write($row, 3, $id, $value_format);
+  $sheet->setMerge($row, 1, $row, 2);
+  $sheet->setMerge($row, 3, $row, 4);
+  $row++;
+
+  $sheet->write($row, 0, 'Buying Club Order Confirmation');
+  $sheet->write($row, 1, 'First Name', $label_format);
+  $sheet->write($row, 3, $first, $value_format);
+  $sheet->setMerge($row, 1, $row, 2);
+  $sheet->setMerge($row, 3, $row, 4);
+  $row++;
+
+  $date_format = 'l\, M jS Y';
+  $sheet->write($row, 0, date($date_format));
+  $sheet->write($row, 1, 'Last Name', $label_format);
+  $sheet->write($row, 3, $last, $value_format);
+  $sheet->setMerge($row, 1, $row, 2);
+  $sheet->setMerge($row, 3, $row, 4);
+  $row++;
+
+  $sheet->write($row, 1, 'Email Address', $label_format);
+  $sheet->write($row, 3, $email, $value_format);
+  $sheet->setMerge($row, 1, $row, 2);
+  $sheet->setMerge($row, 3, $row, 4);
+  $row++;
+
+  $sheet->write($row, 1, 'Phone', $label_format);
+  $sheet->write($row, 3, $phone, $value_format);
+  $sheet->setMerge($row, 1, $row, 2);
+  $sheet->setMerge($row, 3, $row, 4);
+  $row++;
+  $row++;
+
+  $sheet->writeRow($row, 0, array('ITEM', 'UNIT', 'UNIT PRICE', 'QUANTITY', 'PRICE'), $label_format);
+
+  $row++;
+  return $row;
+}
+
+function _uc_buyingclub_download_invoices_write_details($order_id, $category_style, $item_style, $item_money_style, $total_style, $total_money_style, &$sheet, &$row) {
+  $first_detail_row = $row;
+
+  $current_category = '';
+  foreach (_uc_buyingclub_download_invoices_get_order_details($order_id) as $details) {
+    if ($details->qty == 0) continue;
+    if ($details->category != $current_category) {
+      $current_category = $details->category;
+      $sheet->write($row, 0, $current_category, $category_style);
+      $sheet->setMerge($row, 0, $row, 4);
+      $row++;
+    }
+
+    $sheet->write($row, 0, $details->name, $item_style);
+    $sheet->write($row, 1, $details->unit, $item_style);
+    $sheet->write($row, 2, $details->price, $item_money_style);
+    $sheet->write($row, 3, $details->qty, $item_style);
+    $sheet->writeFormula($row, 4, '=C'. ($row+1) .'*D'. ($row+1), $item_money_style);
+
+    $row++;
+  }
+  $last_detail_row = $row;
+
+  $orig_subtotal_row = $row;
+
+  $sheet->write($row, 2, 'Subtotal', $total_style);
+  $sheet->setMerge($row, 2, $row, 3);
+  $sheet->writeFormula($row, 4, '=SUM(E'. ($first_detail_row) .':E'. ($last_detail_row) .')', $total_money_style);
+
+  $row += 2;
+
+  $sheet->write($row, 0, 'overstock', $category_style);
+  $sheet->setMerge($row, 0, $row, 4);
+
+  $row++;
+
+  $first_overstock_row = $row;
+  for ($i = 0; $i < 6; $i++) {
+    $sheet->write($row, 0, '', $item_style);
+    $sheet->write($row, 1, '', $item_style);
+    $sheet->write($row, 2, 0, $item_money_style);
+    $sheet->write($row, 3, 0, $item_style);
+    $sheet->writeFormula($row, 4, '=C'. ($row+1) .'*D'. ($row+1), $item_money_style);
+    $row++;
+  }
+  $last_overstock_row = $row - 1;
+
+  $overstock_subtotal_row = $row;
+  $sheet->write($row, 2, 'Overstock Subtotal', $total_style);
+  $sheet->setMerge($row, 2, $row, 3);
+  $sheet->writeFormula($row, 4, '=SUM(E'. ($first_overstock_row + 1) .':E'. ($last_overstock_row + 1) .')', $total_money_style);
+  $row++;
+
+  $sheet->write($row, 2, 'Total', $total_style);
+  $sheet->setMerge($row, 2, $row, 3);
+  $sheet->writeFormula($row, 4, '=SUM(E'. ($orig_subtotal_row + 1) .';E'. ($overstock_subtotal_row + 1) .')', $total_money_style);
+  $row++;
+
+  return $row;
+}
+
+function _uc_buyingclub_download_invoices_get_order_details($order_id) {
+  $query = "SELECT p.title as name, unit_table.field_unit_value as unit, bop.qty as qty, pr.list_price as price, td.name as category ".
+    "FROM node p, uc_products pr, uc_order_products op, uc_orders o, uc_buyingclub_order_products bop, content_field_unit unit_table, term_node tn, term_data td  ".
+    "WHERE pr.nid=p.nid AND op.nid = p.nid AND op.order_id=o.order_id AND bop.order_product_id=op.order_product_id AND o.order_id=%d AND unit_table.vid=p.vid  ".
+    "AND tn.nid=p.nid AND td.tid=tn.tid ".
+    "ORDER BY td.name, p.title";
+
+  $result = db_query($query, $order_id);
+
+  while ($obj = db_fetch_object($result)) {
+    $details[] = $obj;
+  }
+  return $details;
+}
+
+function _uc_buyingclub_download_invoices_get_orders($ordering_period_id) {
+  $query = "SELECT o.order_id, o.primary_email as email, o.billing_first_name as first, o.billing_last_name as last, o.billing_phone as phone ".
+    "FROM uc_orders o, uc_buyingclub_ordering_periods ordering_period ".
+    "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
+    "AND ordering_period.ordering_period_id = %d ".
+    "ORDER BY o.billing_last_name, o.billing_first_name ";
+
+  $result = db_query($query, $ordering_period_id);
+
+  while ($obj = db_fetch_object($result)) {
+    $orders[] = $obj;
+  }
+  return $orders;
+}
+
+/*
  * Get a row for the grid--array passed should be db rows with labels 'nid' and 'qty'
  */
 function _uc_buyingclub_download_grid_get_nid_qty_row($nids, $label, $db_results) {
