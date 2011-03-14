@@ -285,6 +285,7 @@ function _uc_buyingclub_download_invoices_get_order_details($order_id) {
 
   $result = db_query($query, $order_id);
 
+  $details = ();
   while ($obj = db_fetch_object($result)) {
     $details[] = $obj;
   }
