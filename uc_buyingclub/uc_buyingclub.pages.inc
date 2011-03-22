@@ -220,8 +220,8 @@ function uc_buyingclub_view_ordering_periods() {
   if ($query_result) {
     while ($row = db_fetch_array($query_result)) {
       $data[] = array(
-        'start' => format_date((int)$row['start'], $type='custom', $format=$date_format),
-        'end' => format_date((int)$row['end'], $type='custom', $format=$date_format),
+        'start' => date($date_format, (int)$row['start']),
+        'end' => format_date($date_format, (int)$row['end']),
       );
     }
   }
@@ -299,6 +299,6 @@ function uc_buyingclub_view_reports() {
 function _uc_buyingclub_get_ordering_period_header($start, $end) {
   $date_format = "ga l\, M jS Y";
   return 'Orders placed from '. 
-    format_date($start, $type='custom', $format=$date_format) .' to '. 
-    format_date($end, $type='custom', $format=$date_format) .'<br /><br />';
+    date($date_format, $start) .' to '. 
+    date($date_format, $end) .'<br /><br />';
 }

@@ -123,7 +123,7 @@ function uc_buyingclub_token_values($type, $object = NULL, $options = array()) {
   if ($type == 'order') {
     $period = _uc_buyingclub_get_most_recent_ordering_period();
     $date_format = 'l\, M jS';
-    $tokens['order-pickup-date'] = '6pm - 9pm on '. format_date($period->pickup, $type='custom', $format=$date_format);
+    $tokens['order-pickup-date'] = '6pm - 9pm on '. date($date_format, $period->pickup);
     return $tokens;
   }
 }

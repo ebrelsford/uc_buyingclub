@@ -18,7 +18,7 @@ function uc_buyingclub_finalization_form($rows) {
   }
   if (time() < $end) {
     $date_format = "ga \o\\n l\, M jS Y";
-    drupal_set_message('This ordering period is not over yet. Please wait until '. format_date($end, $type='custom', $format=$date_format) .' to finalize it!', $type='error', $repeat=FALSE);
+    drupal_set_message('This ordering period is not over yet. Please wait until '. date($date_format, $end) .' to finalize it!', $type='error', $repeat=FALSE);
   }
 
   // make queries
@@ -163,7 +163,7 @@ function theme_uc_buyingclub_finalization_form($form) {
   $start = (int)$form['start']['#value'];
   $end = (int)$form['end']['#value'];
   $date_format = "ga l\, M jS Y";
-  $output = 'Orders placed from '. format_date($start, $type='custom', $format=$date_format) .' to '. format_date($end, $type='custom', $format=$date_format);
+  $output = 'Orders placed from '. date($date_format, $start) .' to '. date($date_format, $end);
 
   $output .= theme('table', $header, $rows);
   $output .= drupal_render($form);
