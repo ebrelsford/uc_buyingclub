@@ -360,7 +360,14 @@ function uc_buyingclub_finalize_user($user_id, $start, $end) {
   $query = "SELECT op.title AS title, op.qty AS qty_desired, bop.qty AS qty_given, op.price AS price, o.billing_first_name as first_name ".
     "FROM {uc_orders} o, {uc_order_products} op, {uc_buyingclub_order_products} bop ".
     "WHERE o.uid=%d AND o.created > %d AND o.created < %d AND o.order_status='pending' ".
-      "AND op.order_id = o.order_id AND bop.order_product_id = op.order_product_id";
+      "AND op.order_id = o.order_id AND bop.order_product_id = op.order_product_id ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ";
 
   $query_result = db_query($query, $user_id, $start, $end);
 

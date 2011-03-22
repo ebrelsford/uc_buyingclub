@@ -59,6 +59,13 @@ function uc_buyingclub_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'status' => array(
+        'description' => 'The status of the order product--ordered, received',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
+      ),
       'qty' => array(
         'description' => 'The number of the same product ordered.',
         'type' => 'int',
@@ -102,6 +109,13 @@ function uc_buyingclub_schema() {
         'unsigned' => TRUE,
         'not null' => TRUE,
         'default' => 0,
+      ),
+      'status' => array(
+        'description' => 'The status of the product--ordered, received',
+        'type' => 'varchar',
+        'length' => 32,
+        'not null' => TRUE,
+        'default' => '',
       ),
       'qty_ordered' => array(
         'description' => 'The quantity of the product ordered.',
@@ -195,6 +209,27 @@ function uc_buyingclub_update_6000() {
 
   $ret = array();
   db_create_table($ret, 'uc_buyingclub_products', $schema['uc_buyingclub_products']);
+  return $ret;
+}
+
+function uc_buyingclub_update_6001() {
+  $ret = array();
+  db_add_field($ret, 'uc_buyingclub_order_products', 'status', 
+    array(
+      'description' => 'The status of the order product--ordered, received',
+      'type' => 'varchar',
+      'length' => 32,
+      'not null' => TRUE,
+      'default' => '',
+    ));
+  db_add_field($ret, 'uc_buyingclub_products', 'status',
+    array(
+      'description' => 'The status of the product--ordered, received',
+      'type' => 'varchar',
+      'length' => 32,
+      'not null' => TRUE,
+      'default' => '',
+    ));
   return $ret;
 }
 

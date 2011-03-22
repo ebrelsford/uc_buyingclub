@@ -27,6 +27,13 @@ function uc_buyingclub_view_finalized_orders() {
     "WHERE p.nid=op.nid AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid AND ctd2.vid=p.vid ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "GROUP BY p.nid ".
     "ORDER BY d.title, p.title ";
 
@@ -73,6 +80,13 @@ function uc_buyingclub_view_finalized_orders_by_user() {
     "WHERE p.nid=op.nid AND op.order_id=o.order_id AND bop.order_product_id = op.order_product_id ".
       "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "GROUP BY o.billing_last_name, o.billing_first_name, p.nid ".
     "ORDER BY o.billing_last_name, o.billing_first_name, d.title, p.title ";
 
@@ -146,6 +160,13 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
       "AND o.created > %d AND o.created < %d ".
       "AND ctd.vid=p.vid AND ctd.". $distributor_column ."=d.nid ".
       "AND bop.qty > 0 ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "GROUP BY d.title, p.nid, o.billing_last_name, o.billing_first_name ".
     "ORDER BY d.title, p.title, o.billing_last_name, o.billing_first_name ";
 
@@ -237,6 +258,13 @@ function uc_buyingclub_view_overstock() {
   $query = "SELECT p.title as 'item', pr.cost as 'cost', pr.sell_price as 'member price', bp.qty_overstock as 'expected overstock' ".
     "FROM node p, uc_products pr, uc_buyingclub_products bp ".
     "WHERE pr.nid=p.nid and bp.product_id=p.nid AND bp.ordering_period_id=%d ".
+      "AND bp.uc_buyingclub_product_id = ( ".
+        "SELECT bp2.uc_buyingclub_product_id ".
+        "FROM {uc_buyingclub_products} bp2 ".
+        "WHERE bp2.product_id = bp.product_id ".
+        "ORDER BY bp2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "ORDER BY p.title";
 
   $query_result = db_query($query, $period->ordering_period_id);

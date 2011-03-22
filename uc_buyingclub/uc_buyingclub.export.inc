@@ -22,6 +22,13 @@ function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) 
     "AND ctd2.vid = p.vid ".
     "AND ctd3.vid = p.vid ".
     "AND ubp.ordering_period_id = %d AND up.nid=p.nid ".
+    "AND ubp.uc_buyingclub_product_id = ( ".
+        "SELECT ubp2.uc_buyingclub_product_id ".
+        "FROM {uc_buyingclub_products} ubp2 ".
+        "WHERE ubp2.product_id = p.nid ".
+        "ORDER BY ubp2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "GROUP BY p.nid ".
     "ORDER BY d.title, p.title";
 
@@ -326,7 +333,14 @@ function _uc_buyingclub_download_grid_get_nid_qty_row($nids, $label, $db_results
 function _uc_buyingclub_download_grid_get_products_overstock($ordering_period_id) {
   $query = "select bp.product_id as `nid`, bp.qty_overstock as `qty` ".
     "from {uc_buyingclub_products} bp ".
-    "where bp.ordering_period_id=%d";
+    "where bp.ordering_period_id=%d ".
+      "AND bp.uc_buyingclub_product_id = ( ".
+        "SELECT bp2.uc_buyingclub_product_id ".
+        "FROM {uc_buyingclub_products} bp2 ".
+        "WHERE bp2.product_id = bp.product_id ".
+        "ORDER BY bp2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ";
 
   $result = db_query($query, $ordering_period_id);
 
@@ -385,6 +399,13 @@ function _uc_buyingclub_download_grid_get_ordered_products($ordering_period_id) 
   $query = "SELECT p.nid, p.title as `name`, pr.sell_price as `price`, unit_table." . $unit_column ." as `unit`, bp.qty_ordered ".
     "FROM {node} p, {uc_products} pr, {uc_buyingclub_products} bp, {". $unit_table ."} unit_table ".
     "WHERE pr.nid=p.nid AND bp.product_id=p.nid AND bp.ordering_period_id=%d AND unit_table.vid=p.vid ".
+      "AND bp.uc_buyingclub_product_id = ( ".
+        "SELECT bp2.uc_buyingclub_product_id ".
+        "FROM {uc_buyingclub_products} bp2 ".
+        "WHERE bp2.product_id = bp.product_id ".
+        "ORDER BY bp2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "ORDER BY p.title";
 
   $result = db_query($query, $ordering_period_id);
