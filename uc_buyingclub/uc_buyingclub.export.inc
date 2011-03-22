@@ -331,9 +331,9 @@ function _uc_buyingclub_download_grid_get_nid_qty_row($nids, $label, $db_results
 }
 
 function _uc_buyingclub_download_grid_get_products_overstock($ordering_period_id) {
-  $query = "select bp.product_id as `nid`, bp.qty_overstock as `qty` ".
-    "from {uc_buyingclub_products} bp ".
-    "where bp.ordering_period_id=%d ".
+  $query = "SELECT bp.product_id AS `nid`, bp.qty_overstock AS `qty` ".
+    "FROM {uc_buyingclub_products} bp ".
+    "WHERE bp.ordering_period_id=%d ".
       "AND bp.uc_buyingclub_product_id = ( ".
         "SELECT bp2.uc_buyingclub_product_id ".
         "FROM {uc_buyingclub_products} bp2 ".
@@ -351,10 +351,11 @@ function _uc_buyingclub_download_grid_get_products_overstock($ordering_period_id
 }
 
 function _uc_buyingclub_download_grid_get_products_sold($ordering_period_id) {
-  $query = "select p.nid, sum(bop.qty) as `qty` ".
-    "from {node} p, {uc_buyingclub_order_products} bop, {uc_buyingclub_ordering_periods} period, {uc_orders} o, {uc_order_products} op ".
-    "where (o.order_status='pending' OR o.order_status='completed') and o.created > period.start and o.created < period.end and op.order_id=o.order_id and bop.order_product_id=op.order_product_id and op.nid=p.nid and period.ordering_period_id=%d ".
-    "group by p.nid";
+  $query = "SELECT p.nid, sum(bop.qty) AS `qty` ".
+    "FROM {node} p, {uc_buyingclub_order_products} bop, {uc_buyingclub_ordering_periods} period, {uc_orders} o, {uc_order_products} op ".
+    "WHERE (o.order_status='pending' OR o.order_status='completed') AND o.created > period.start AND o.created < period.end ".
+      "AND op.order_id=o.order_id AND bop.order_product_id=op.order_product_id AND op.nid=p.nid AND period.ordering_period_id=%d ".
+    "GROUP BY p.nid";
 
   $result = db_query($query, $ordering_period_id);
 
@@ -365,9 +366,9 @@ function _uc_buyingclub_download_grid_get_products_sold($ordering_period_id) {
 }
 
 function _uc_buyingclub_download_grid_get_order_products($order_id) {
-  $query = "select op.nid, bop.qty ".
-    "from {uc_order_products} op, {uc_buyingclub_order_products} bop ".
-    "where bop.order_product_id=op.order_product_id and op.order_id=%d";
+  $query = "SELECT op.nid, bop.qty ".
+    "FROM {uc_order_products} op, {uc_buyingclub_order_products} bop ".
+    "WHERE bop.order_product_id=op.order_product_id AND op.order_id=%d";
 
   $result = db_query($query, $order_id);
 
@@ -378,10 +379,10 @@ function _uc_buyingclub_download_grid_get_order_products($order_id) {
 }
 
 function _uc_buyingclub_download_grid_get_users($ordering_period_id) {
-  $query = "select o.order_id, o.billing_last_name AS `last`, o.billing_first_name AS `first` ".
-    "from {uc_orders} o, {uc_buyingclub_ordering_periods} period ".
-    "where (o.order_status='pending' OR o.order_status='completed') and o.created > period.start and o.created < period.end and period.ordering_period_id=%d ".
-    "order by o.billing_last_name, o.billing_first_name";
+  $query = "SELECT o.order_id, o.billing_last_name AS `last`, o.billing_first_name AS `first` ".
+    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods} period ".
+    "WHERE (o.order_status='pending' OR o.order_status='completed') AND o.created > period.start AND o.created < period.end AND period.ordering_period_id=%d ".
+    "ORDER BY o.billing_last_name, o.billing_first_name";
 
   $result = db_query($query, $ordering_period_id);
 

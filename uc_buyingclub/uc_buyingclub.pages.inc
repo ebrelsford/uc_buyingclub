@@ -256,7 +256,7 @@ function uc_buyingclub_view_overstock() {
   $period = _uc_buyingclub_get_most_recent_ordering_period();
 
   $query = "SELECT p.title as 'item', pr.cost as 'cost', pr.sell_price as 'member price', bp.qty_overstock as 'expected overstock' ".
-    "FROM node p, uc_products pr, uc_buyingclub_products bp ".
+    "FROM {node} p, {uc_products} pr, {uc_buyingclub_products} bp ".
     "WHERE pr.nid=p.nid and bp.product_id=p.nid AND bp.ordering_period_id=%d ".
       "AND bp.uc_buyingclub_product_id = ( ".
         "SELECT bp2.uc_buyingclub_product_id ".
