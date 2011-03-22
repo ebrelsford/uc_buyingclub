@@ -14,13 +14,11 @@ function uc_buyingclub_view_finalized_orders() {
   $end = $period->end;
 
   // query
-  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
-  $distributor_table = $distributor_db_info['table'];
-  $distributor_column = $distributor_db_info['columns']['nid']['column'];
+  $distributor_table = _uc_buyingclub_get_distributor_table();
+  $distributor_column = _uc_buyingclub_get_distributor_column();
 
-  $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
-  $minimum_order_table = $minimum_order_db_info['table'];
-  $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
+  $minimum_order_table = _uc_buyingclub_get_minimum_order_table();
+  $minimum_order_column = _uc_buyingclub_get_minimum_order_column();
 
   $query = "SELECT p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, ctd2.". $minimum_order_column ." AS minimum_order, SUM(bop.qty) AS qty_ordered ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2, {uc_buyingclub_order_products} bop ".
@@ -71,9 +69,8 @@ function uc_buyingclub_view_finalized_orders_by_user() {
   $end = $period->end;
 
   // query
-  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
-  $distributor_table = $distributor_db_info['table'];
-  $distributor_column = $distributor_db_info['columns']['nid']['column'];
+  $distributor_table = _uc_buyingclub_get_distributor_table();
+  $distributor_column = _uc_buyingclub_get_distributor_column();
 
   $query = "SELECT o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, p.title AS product_name, d.title AS distributor_name, SUM(op.qty) AS qty_desired, SUM(bop.qty) AS qty_ordered, op.price AS price ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {uc_buyingclub_order_products} bop ".
@@ -150,9 +147,8 @@ function uc_buyingclub_view_finalized_orders_by_distributor() {
   $end = $period->end;
 
   // query
-  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
-  $distributor_table = $distributor_db_info['table'];
-  $distributor_column = $distributor_db_info['columns']['nid']['column'];
+  $distributor_table = _uc_buyingclub_get_distributor_table();
+  $distributor_column = _uc_buyingclub_get_distributor_column();
 
   $query = "SELECT d.title AS distributor_name, p.title AS product_name, o.billing_first_name AS member_first_name, o.billing_last_name AS member_last_name, SUM(bop.qty) AS qty_ordered, d.nid AS distributor_id ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {uc_buyingclub_order_products} bop ".

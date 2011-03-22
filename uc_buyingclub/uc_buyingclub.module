@@ -240,13 +240,11 @@ function _uc_buyingclub_already_finalized($start, $end) {
 }
 
 function _uc_buyingclub_get_orders_to_finalize($start, $end) {
-  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
-  $distributor_table = $distributor_db_info['table'];
-  $distributor_column = $distributor_db_info['columns']['nid']['column'];
+  $distributor_table = _uc_buyingclub_get_distributor_table();
+  $distributor_column = _uc_buyingclub_get_distributor_column();
 
-  $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
-  $minimum_order_table = $minimum_order_db_info['table'];
-  $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
+  $minimum_order_table = _uc_buyingclub_get_minimum_order_table();
+  $minimum_order_column = _uc_buyingclub_get_minimum_order_column();
 
   $query = "SELECT p.title AS product_name, p.nid AS product_id, SUM(op.qty) AS order_product_qty, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2 ".
@@ -341,4 +339,34 @@ function _uc_buyingclub_get_next_ordering_period() {
   }
 
   return $period;
+}
+
+function _uc_buyingclub_get_distributor_column() {
+  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
+  return $distributor_db_info['columns']['nid']['column'];
+}
+
+function _uc_buyingclub_get_distributor_table() {
+  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
+  return $distributor_db_info['table'];
+}
+
+function _uc_buyingclub_get_minimum_order_column() {
+  $db_info = content_database_info(content_fields('field_minimum_order')); 
+  return $db_info['columns']['value']['column'];
+}
+
+function _uc_buyingclub_get_minimum_order_table() {
+  $db_info = content_database_info(content_fields('field_minimum_order')); 
+  return $db_info['table'];
+}
+
+function _uc_buyingclub_get_unit_column() {
+  $db_info = content_database_info(content_fields('field_unit')); 
+  return $db_info['columns']['value']['column'];
+}
+
+function _uc_buyingclub_get_unit_table() {
+  $db_info = content_database_info(content_fields('field_unit')); 
+  return $db_info['table'];
 }

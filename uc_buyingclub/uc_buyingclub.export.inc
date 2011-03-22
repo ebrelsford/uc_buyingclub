@@ -2,17 +2,14 @@
 
 function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) {
   // select all products with the total ordered
-  $distributor_db_info = content_database_info(content_fields('field_distributor')); 
-  $distributor_table = $distributor_db_info['table'];
-  $distributor_column = $distributor_db_info['columns']['nid']['column'];
+  $distributor_table = _uc_buyingclub_get_distributor_table();
+  $distributor_column = _uc_buyingclub_get_distributor_column();
 
-  $minimum_order_db_info = content_database_info(content_fields('field_minimum_order')); 
-  $minimum_order_table = $minimum_order_db_info['table'];
-  $minimum_order_column = $minimum_order_db_info['columns']['value']['column'];
+  $minimum_order_table = _uc_buyingclub_get_minimum_order_table();
+  $minimum_order_column = _uc_buyingclub_get_minimum_order_column();
 
-  $unit_db_info = content_database_info(content_fields('field_unit')); 
-  $unit_table = $unit_db_info['table'];
-  $unit_column = $unit_db_info['columns']['value']['column'];
+  $unit_table = _uc_buyingclub_get_unit_table();
+  $unit_column = _uc_buyingclub_get_unit_column();
   
   $query = "SELECT p.title AS 'item', ctd2.". $minimum_order_column ." AS `bulk req`, ctd3.". $unit_column ." AS `unit`, up.cost * ctd2.". $minimum_order_column ." AS `cast cost`, ubp.qty_ordered / ctd2.". $minimum_order_column ." AS `cases ordered`, up.cost * ubp.qty_ordered AS `total cost` ".
     "FROM {uc_buyingclub_products} ubp, {uc_products} up, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2, {". $unit_table ."} ctd3 ".
@@ -284,10 +281,20 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $category_sty
 }
 
 function _uc_buyingclub_download_invoices_get_order_details($order_id) {
-  $query = "SELECT p.title as name, unit_table.field_unit_value as unit, bop.qty as qty, op.price as price, td.name as category ".
-    "FROM {node} p, {uc_order_products} op, {uc_orders} o, {uc_buyingclub_order_products} bop, {content_field_unit} unit_table, {term_node} tn, {term_data} td  ".
+  $unit_table = _uc_buyingclub_get_unit_table();
+  $unit_column = _uc_buyingclub_get_unit_column();
+
+  $query = "SELECT p.title as name, unit_table.". $unit_column ." as unit, bop.qty as qty, op.price as price, td.name as category ".
+    "FROM {node} p, {uc_order_products} op, {uc_orders} o, {uc_buyingclub_order_products} bop, {". $unit_table ."} unit_table, {term_node} tn, {term_data} td  ".
     "WHERE op.nid = p.nid AND op.order_id=o.order_id AND bop.order_product_id=op.order_product_id AND o.order_id=%d AND unit_table.vid=p.vid  ".
-    "AND tn.nid=p.nid AND td.tid=tn.tid ".
+      "AND tn.nid=p.nid AND td.tid=tn.tid ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "ORDER BY td.name, p.title";
 
   $result = db_query($query, $order_id);
@@ -301,7 +308,7 @@ function _uc_buyingclub_download_invoices_get_order_details($order_id) {
 
 function _uc_buyingclub_download_invoices_get_orders($ordering_period_id) {
   $query = "SELECT o.order_id, o.primary_email as email, o.billing_first_name as first, o.billing_last_name as last, o.billing_phone as phone ".
-    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods ordering_period} ".
+    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods} ordering_period ".
     "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
     "AND ordering_period.ordering_period_id = %d AND (o.order_status='pending' OR o.order_status='completed') ".
     "ORDER BY o.billing_last_name, o.billing_first_name ";
@@ -355,6 +362,13 @@ function _uc_buyingclub_download_grid_get_products_sold($ordering_period_id) {
     "FROM {node} p, {uc_buyingclub_order_products} bop, {uc_buyingclub_ordering_periods} period, {uc_orders} o, {uc_order_products} op ".
     "WHERE (o.order_status='pending' OR o.order_status='completed') AND o.created > period.start AND o.created < period.end ".
       "AND op.order_id=o.order_id AND bop.order_product_id=op.order_product_id AND op.nid=p.nid AND period.ordering_period_id=%d ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "GROUP BY p.nid";
 
   $result = db_query($query, $ordering_period_id);
@@ -368,7 +382,14 @@ function _uc_buyingclub_download_grid_get_products_sold($ordering_period_id) {
 function _uc_buyingclub_download_grid_get_order_products($order_id) {
   $query = "SELECT op.nid, bop.qty ".
     "FROM {uc_order_products} op, {uc_buyingclub_order_products} bop ".
-    "WHERE bop.order_product_id=op.order_product_id AND op.order_id=%d";
+    "WHERE bop.order_product_id=op.order_product_id AND op.order_id=%d ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ";
 
   $result = db_query($query, $order_id);
 
@@ -393,9 +414,8 @@ function _uc_buyingclub_download_grid_get_users($ordering_period_id) {
 }
 
 function _uc_buyingclub_download_grid_get_ordered_products($ordering_period_id) {
-  $unit_db_info = content_database_info(content_fields('field_unit')); 
-  $unit_table = $unit_db_info['table'];
-  $unit_column = $unit_db_info['columns']['value']['column'];
+  $unit_table = _uc_buyingclub_get_unit_table();
+  $unit_column = _uc_buyingclub_get_unit_column();
 
   $query = "SELECT p.nid, p.title as `name`, pr.sell_price as `price`, unit_table." . $unit_column ." as `unit`, bp.qty_ordered ".
     "FROM {node} p, {uc_products} pr, {uc_buyingclub_products} bp, {". $unit_table ."} unit_table ".
