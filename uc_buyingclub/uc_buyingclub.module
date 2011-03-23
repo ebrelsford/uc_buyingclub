@@ -36,6 +36,14 @@ function uc_buyingclub_menu() {
     'page arguments' => array('uc_buyingclub_finalization_form'),
   );
 
+  $items['buyingclub/finalize/received'] = array(
+    'title' => "Buying Club: Finalize received items",
+    'access arguments' => array('administer uc_buyingclub'),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('uc_buyingclub_received_items_form'),
+  );
+
   $items['buyingclub/view/finalized'] = array(
     'title' => "Buying Club: View finalized orders",
     'access arguments' => array('administer uc_buyingclub'),
@@ -139,6 +147,9 @@ function uc_buyingclub_token_list($type = 'all') {
 function uc_buyingclub_theme() {
   return array(
     'uc_buyingclub_finalization_form' => array(
+      'arguments' => array('form', NULL)
+    ),
+    'uc_buyingclub_received_items_form' => array(
       'arguments' => array('form', NULL)
     )
   );
@@ -369,4 +380,14 @@ function _uc_buyingclub_get_unit_column() {
 function _uc_buyingclub_get_unit_table() {
   $db_info = content_database_info(content_fields('field_unit')); 
   return $db_info['table'];
+}
+
+/*
+ * Get a line describing the ordering period defined by $start and $end
+ */
+function _uc_buyingclub_get_ordering_period_header($start, $end) {
+  $date_format = "ga l\, M jS Y";
+  return 'Orders placed from '. 
+    date($date_format, $start) .' to '. 
+    date($date_format, $end) .'<br /><br />';
 }

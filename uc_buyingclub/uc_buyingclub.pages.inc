@@ -319,10 +319,3 @@ function uc_buyingclub_view_reports() {
 
   return $out;
 }
-
-function _uc_buyingclub_get_ordering_period_header($start, $end) {
-  $date_format = "ga l\, M jS Y";
-  return 'Orders placed from '. 
-    date($date_format, $start) .' to '. 
-    date($date_format, $end) .'<br /><br />';
-}
