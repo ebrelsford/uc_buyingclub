@@ -110,6 +110,7 @@ function uc_buyingclub_download_invoices($ordering_period_id) {
   require_once 'Spreadsheet/Excel/Writer.php';
 
   $workbook = new Spreadsheet_Excel_Writer();
+  $workbook->setVersion(8);
 
   $workbook->send('buyingclub_invoices_'. date('Ymd') .'.xls');
 
