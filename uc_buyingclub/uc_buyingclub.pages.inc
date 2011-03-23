@@ -274,9 +274,15 @@ function uc_buyingclub_view_overstock() {
       $overall_cost += $total_cost;
       $row[] = $total_cost;
 
-      $data[] = $row;
+      $data[] = array(
+        $row['item'],
+        uc_currency_format($row['cost']),
+        uc_currency_format($row['member price']),
+        $row['expected overstock'],
+        uc_currency_format($total_cost),
+      );
     }
-    $data[] = array('','','', 'total', $overall_cost);
+    $data[] = array('','','', 'total', uc_currency_format($overall_cost));
   }
   else {
     return $out ."No orders or overstock to show";
