@@ -298,30 +298,14 @@ function uc_buyingclub_view_reports() {
 
   $out = _uc_buyingclub_get_ordering_period_header($period->start, $period->end);
 
-  $out .= '<ul>';
-  $out .= '<li>';
-  $out .= l(t('Download grid view'), 'buyingclub/export/grid/'. $period->ordering_period_id .'/csv');
-  $out .= '</li>';
-
-  $out .= '<li>';
-  $out .= l(t('View overstock'), 'buyingclub/view/overstock/');
-  $out .= '</li>';
-
-  $out .= '<li>';
-  $out .= l(t('View finalized orders, by member'), 'buyingclub/view/finalized/by_user');
-  $out .= '</li>';
-
-  $out .= '<li>';
-  $out .= l(t('View finalized orders, by distributor'), 'buyingclub/view/finalized/by_distributor');
-  $out .= '</li>';
-
-  $out .= '<li>';
-  $out .= l(t('Download invoices'), 'buyingclub/export/invoices/'. $period->ordering_period_id .'/xls');
-  $out .= '</li>';
-
-  $out .= '<li>';
-  $out .= l(t('Download order list'), 'buyingclub/export/order_list/'. $period->ordering_period_id .'/csv');
-  $out .= '</li>';
+  $out .= theme_item_list(array(
+      l(t('Download grid view'), 'buyingclub/export/grid/'. $period->ordering_period_id .'/csv'),
+      l(t('View overstock'), 'buyingclub/view/overstock/'),
+      l(t('View finalized orders, by member'), 'buyingclub/view/finalized/by_user'),
+      l(t('View finalized orders, by distributor'), 'buyingclub/view/finalized/by_distributor'),
+      l(t('Download invoices'), 'buyingclub/export/invoices/'. $period->ordering_period_id .'/xls'),
+      l(t('Download order list'), 'buyingclub/export/order_list/'. $period->ordering_period_id .'/csv'),
+    ), NULL, 'ul');
 
   return $out;
 }
