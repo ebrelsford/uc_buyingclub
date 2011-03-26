@@ -1,0 +1,81 @@
+<?php
+
+/*
+ * Try to get contact/address information for the logged in user from CiviCRM.
+ * 
+ * Returns NULL if a contact or address cannot be found for this user.
+ */
+function uc_buyingclub_civicrm_get_user_address_for_uc($user) {
+  if ($user->uid == 0) return NULL;
+
+  civicrm_initialize(TRUE);
+  global $civicrm_root;
+
+  // get civi contact id
+  include_once($civicrm_root . '/api/v2/UFGroup.php');
+  $civi_id = civicrm_uf_match_id_get($user->uid);
+  if ($civi_id == NULL) return NULL;
+
+  // get contact info
+  $params = array(
+    'contact_id' => $civi_id,
+    'return.first_name' => 1,
+    'return.last_name' => 1,
+    'return.email' => 1,
+    'return.phone' => 1,
+    'return.postal_code' => 1,
+    'return.address' => 1,
+  );
+
+  include_once($civicrm_root . '/api/v2/Contact.php');
+  $contacts = civicrm_contact_get(&$params);
+  if ($contacts == NULL || count($contacts) == 0) return NULL;
+
+  $contact_ids = array_keys($contacts);
+  $contact = $contacts[$contact_ids[0]];
+
+  // get contact address info
+  include_once($civicrm_root . '/api/v2/Location.php');
+  $locations = civicrm_location_get($params);
+  if ($locations == NULL || count($locations) == 0) return NULL;
+
+  $location_ids = array_keys($locations);
+  $address = $locations[$location_ids[0]]['address'];
+
+  return array(
+    'first_name' => $contact['first_name'],
+    'last_name' => $contact['last_name'],
+    'phone' => $contact['phone'],
+    'company' => '',
+    'street1' => $address['street_address'],
+    'street2' => $address['supplemental_address_1'],
+    'city' => $address['city'],
+    'zone' => 43, // New York state
+    'postal_code' => $contact['postal_code'],
+    'country' => 840, // United States
+  );
+}
+
+/*
+ * Add the address in CiviCRM for the user to the user's saved billing addresses, automatically populate.
+ */
+function uc_buyingclub_civicrm_form_alter(&$form, $form_state, $form_id) {
+  if ($form_id == 'uc_cart_checkout_form') {
+    global $user;
+    $civi_address = uc_buyingclub_civicrm_get_user_address_for_uc($user);
+
+    if ($civi_address == NULL) return;
+
+    $billing_pane = &$form['panes']['billing'];
+
+    // add civi address to dropdown
+    $label = t('From CiviCRM');
+    $billing_pane['billing_address_select']['#options'][drupal_to_js($civi_address)] = $label;
+    $billing_pane['billing_address_select']['#default_value'] = $label;
+
+    // assume user will be fine with civi address
+    foreach ($civi_address as $label => $value) {
+      $billing_pane['billing_'. $label]['#default_value'] = $value;
+    }
+  }
+}

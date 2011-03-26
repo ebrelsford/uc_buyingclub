@@ -1,0 +1,10 @@
+; $Id$
+name = Buying Club CiviCRM
+description = Integrate CiviCRM with Ubercart
+core = 6.x
+php = 5.0
+package = Buying Club
+dependencies[] = uc_buyingclub
+dependencies[] = civicrm
+
+
