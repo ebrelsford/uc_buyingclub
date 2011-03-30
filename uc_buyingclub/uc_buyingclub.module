@@ -124,6 +124,22 @@ function uc_buyingclub_menu() {
     'file' => 'uc_buyingclub.export.inc',
   );
 
+  $items['buyingclub/export/check_in/%/xls'] = array(
+    'access arguments' => array('access uc_buyingclub reports'),
+    'page arguments' => array(3),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_download_check_in_list',
+    'file' => 'uc_buyingclub.export.inc',
+  );
+
+  $items['buyingclub/export/check_out/%/xls'] = array(
+    'access arguments' => array('access uc_buyingclub reports'),
+    'page arguments' => array(3),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_download_check_out_list',
+    'file' => 'uc_buyingclub.export.inc',
+  );
+
   return $items;
 }
 

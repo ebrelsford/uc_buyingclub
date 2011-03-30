@@ -305,6 +305,8 @@ function uc_buyingclub_view_reports() {
       l(t('View finalized orders, by distributor'), 'buyingclub/view/finalized/by_distributor'),
       l(t('Download invoices'), 'buyingclub/export/invoices/'. $period->ordering_period_id .'/xls'),
       l(t('Download order list'), 'buyingclub/export/order_list/'. $period->ordering_period_id .'/csv'),
+      l(t('Download check in list'), 'buyingclub/export/check_in/'. $period->ordering_period_id .'/xls'),
+      l(t('Download check out list'), 'buyingclub/export/check_out/'. $period->ordering_period_id .'/xls'),
     ), NULL, 'ul');
 
   return $out;

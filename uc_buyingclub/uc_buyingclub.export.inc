@@ -1,5 +1,199 @@
 <?php
 
+function uc_buyingclub_download_check_in_list($ordering_period_id) {
+  require_once 'PHPExcel.php';
+  require_once 'PHPExcel/Writer/Excel2007.php';
+
+  $objPHPExcel = new PHPExcel();
+
+  // Set properties
+  $objPHPExcel->getProperties()->setTitle("Check-in List");
+  $objPHPExcel->getProperties()->setSubject("Check-in List");
+  $objPHPExcel->getProperties()->setDescription("Check-in List");
+
+
+  // Add some data
+  $objPHPExcel->setActiveSheetIndex(0);
+
+  $query = "SELECT o.billing_first_name as first, o.billing_last_name as last ".
+    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods} ordering_period ".
+    "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
+    "AND ordering_period.ordering_period_id=%d  AND (o.order_status = 'completed' OR o.order_status = 'pending') ".
+    "ORDER BY o.billing_last_name, o.billing_first_name";
+
+  $result = db_query($query, $ordering_period_id);
+  $new_order_id = 1;
+  $row = 1;
+
+  $sheet = $objPHPExcel->getActiveSheet();
+
+  $sheet->getColumnDimension('A')->setAutoSize(true);
+  $sheet->getColumnDimension('B')->setAutoSize(true);
+  $sheet->getColumnDimension('C')->setAutoSize(true);
+  $sheet->getColumnDimension('D')->setAutoSize(true);
+  
+  $date = gmmktime(0, 0, 0, gmdate('n'), gmdate('j'), gmdate('Y'));
+  $sheet->setCellValueByColumnAndRow(3, $row, PHPExcel_Shared_Date::PHPToExcel($date));
+  $sheet->getStyle('D1')->getNumberFormat()->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_DATE_XLSX14);
+  $row++;
+
+  $sheet->setCellValueByColumnAndRow(0, $row, 'Order #');
+  $sheet->setCellValueByColumnAndRow(1, $row, 'Last');
+  $sheet->setCellValueByColumnAndRow(2, $row, 'First');
+  $sheet->setCellValueByColumnAndRow(3, $row, 'Checked in?');
+  $sheet->getStyle('A'.$row.':D'.$row)->applyFromArray(array(
+    'font' => array(
+      'bold' => true, 
+      'color' => array('rgb' => 'FFFFFF'),
+    ),
+    'fill' => array(
+      'type' => PHPExcel_Style_Fill::FILL_SOLID, 
+      'color' => array('rgb' => '000000'),
+    ),
+  ));
+  $row++;
+
+  while ($obj = db_fetch_object($result)) {
+    $sheet->setCellValueByColumnAndRow(0, $row, $new_order_id);
+    $sheet->setCellValueByColumnAndRow(1, $row, $obj->last);
+    $sheet->setCellValueByColumnAndRow(2, $row, $obj->first);
+    $new_order_id++;
+    $row++;
+  }
+
+  // Rename sheet
+  $sheet->setTitle('Order List');
+
+  _uc_buyingclub_set_excel_headers('check in ' . date('Ymd') . '.xlsx');
+      
+  // Save Excel 2007 file
+  $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+  $objWriter->save('php://output');
+
+  $objPHPExcel->disconnectWorksheets();
+  unset($objPHPExcel);
+}
+
+function _uc_buyingclub_download_check_out_list_get_subtotal($order_id) {
+  $query = "SELECT bop.qty * op.price as price ".
+    "FROM {uc_order_products} op, {uc_buyingclub_order_products} bop ".
+    "WHERE op.order_id=%d AND bop.order_product_id=op.order_product_id ".
+
+      // make sure we get the most recent uc_buyingclub_order_product
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ";
+  $result = db_query($query, $order_id);
+
+  $sum = 0;
+  while ($arr = db_fetch_array($result)) {
+    $sum += $arr['price'];
+  }
+
+  return $sum;
+}
+
+function uc_buyingclub_download_check_out_list($ordering_period_id) {
+  require_once 'PHPExcel.php';
+  require_once 'PHPExcel/Writer/Excel2007.php';
+
+  $objPHPExcel = new PHPExcel();
+
+  // Set properties
+  $objPHPExcel->getProperties()->setTitle("Check-out List");
+  $objPHPExcel->getProperties()->setSubject("Check-out List");
+  $objPHPExcel->getProperties()->setDescription("Check-out List");
+
+
+  // Add some data
+  $objPHPExcel->setActiveSheetIndex(0);
+
+  $query = "SELECT o.order_id as order_id, o.billing_first_name as first, o.billing_last_name as last ".
+    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods} ordering_period ".
+    "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
+    "AND ordering_period.ordering_period_id=%d  AND (o.order_status = 'completed' OR o.order_status = 'pending') ".
+    "ORDER BY o.billing_last_name, o.billing_first_name";
+
+  $result = db_query($query, $ordering_period_id);
+  $new_order_id = 1;
+  $row = 1;
+
+  $sheet = $objPHPExcel->getActiveSheet();
+
+  $sheet->getColumnDimension('A')->setAutoSize(true);
+  $sheet->getColumnDimension('B')->setAutoSize(true);
+  $sheet->getColumnDimension('C')->setAutoSize(true);
+  $sheet->getColumnDimension('D')->setAutoSize(true);
+  $sheet->getColumnDimension('E')->setAutoSize(true);
+  $sheet->getColumnDimension('F')->setAutoSize(true);
+  $sheet->getColumnDimension('G')->setAutoSize(true);
+  $sheet->getColumnDimension('H')->setAutoSize(true);
+  
+  $date = gmmktime(0, 0, 0, gmdate('n'), gmdate('j'), gmdate('Y'));
+  $sheet->setCellValueByColumnAndRow(3, $row, PHPExcel_Shared_Date::PHPToExcel($date));
+  $sheet->getStyle('D1')->getNumberFormat()->setFormatCode(PHPExcel_Style_NumberFormat::FORMAT_DATE_XLSX14);
+  $row++;
+
+  $sheet->setCellValueByColumnAndRow(0, $row, 'Order #');
+  $sheet->setCellValueByColumnAndRow(1, $row, 'Last');
+  $sheet->setCellValueByColumnAndRow(2, $row, 'First');
+  $sheet->setCellValueByColumnAndRow(3, $row, 'Subtotal');
+  $sheet->setCellValueByColumnAndRow(4, $row, 'Overstock Purchase');
+  $sheet->setCellValueByColumnAndRow(5, $row, 'Grand Total');
+  $sheet->setCellValueByColumnAndRow(6, $row, 'Check #');
+  $sheet->setCellValueByColumnAndRow(7, $row, 'Name on Check');
+  $sheet->getStyle('A'.$row.':H'.$row)->applyFromArray(array(
+    'font' => array(
+      'bold' => true, 
+      'color' => array('rgb' => 'FFFFFF'),
+    ),
+    'fill' => array(
+      'type' => PHPExcel_Style_Fill::FILL_SOLID, 
+      'color' => array('rgb' => '000000'),
+    ),
+  ));
+  $row++;
+
+  $first_user_row = $row;
+  while ($obj = db_fetch_object($result)) {
+    $sheet->setCellValueByColumnAndRow(0, $row, $new_order_id);
+    $sheet->setCellValueByColumnAndRow(1, $row, $obj->last);
+    $sheet->setCellValueByColumnAndRow(2, $row, $obj->first);
+    $sheet->setCellValueByColumnAndRow(3, $row, _uc_buyingclub_download_check_out_list_get_subtotal($obj->order_id));
+    $sheet->setCellValueByColumnAndRow(4, $row, 0);
+    $sheet->setCellValueByColumnAndRow(5, $row, '=D'.$row.'+E'.$row);
+    $sheet->setCellValueByColumnAndRow(7, $row, $obj->first .' '. $obj->last);
+    $new_order_id++;
+    $row++;
+  }
+  $sheet->getStyle('D'.$first_user_row.':F'.$row)->getNumberFormat()->setFormatCode('$#,##0.00');
+
+  // Rename sheet
+  $sheet->setTitle('Order List');
+
+  _uc_buyingclub_set_excel_headers('check out ' . date('Ymd') . '.xlsx');
+      
+  // Save Excel 2007 file
+  $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+  $objWriter->save('php://output');
+
+  $objPHPExcel->disconnectWorksheets();
+  unset($objPHPExcel);
+}
+
+function _uc_buyingclub_set_excel_headers($filename) {
+  header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
+  header("Cache-Control: no-store, no-cache, must-revalidate");
+  header("Cache-Control: post-check=0, pre-check=0", false);
+  header("Pragma: no-cache");
+  header('Content-Type: application/vnd.ms-excel');
+  header('Content-Disposition: attachment;filename="'. $filename .'"');
+}
+
 function uc_buyingclub_download_finalized($ordering_period_id, $distributor_id) {
   // select all products with the total ordered
   $distributor_table = _uc_buyingclub_get_distributor_table();
@@ -278,7 +472,25 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $category_sty
   $sheet->writeFormula($row, 4, '=SUM(E'. ($orig_subtotal_row + 1) .';E'. ($overstock_subtotal_row + 1) .')', $total_money_style);
   $row++;
 
+  $row++;
+  $sheet->write($row, 0, 'comments');
+  $sheet->write($row, 1, _uc_buyingclub_download_invoices_get_order_comment($order_id));
+  $row++;
+
   return $row;
+}
+
+function _uc_buyingclub_download_invoices_get_order_comment($order_id) {
+  $query = "SELECT message ".
+    "FROM uc_order_comments ".
+    "WHERE order_id=%d ";
+  $result = db_query($query, $order_id);
+
+  $comments = db_fetch_array($result);
+  if ($comments != NULL && count($comments) >= 1) {
+    return $comments['message'];
+  }
+  return "";
 }
 
 function _uc_buyingclub_download_invoices_get_order_details($order_id) {
