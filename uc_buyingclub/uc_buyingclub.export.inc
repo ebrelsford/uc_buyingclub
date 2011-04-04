@@ -327,6 +327,7 @@ function uc_buyingclub_download_invoices($ordering_period_id) {
   $details_item_style =& $workbook->addFormat(array(
     'bottom'=>1,
     'right'=>1,
+    'align'=>'left',
   ));
 
   $details_item_money_style =& $workbook->addFormat(array(
@@ -408,7 +409,7 @@ function _uc_buyingclub_download_invoices_write_header($id, $first, $last, $emai
   $row++;
   $row++;
 
-  $sheet->writeRow($row, 0, array('ITEM', 'UNIT', 'UNIT PRICE', 'QUANTITY', 'PRICE'), $label_format);
+  $sheet->writeRow($row, 0, array('QUANTITY', 'ITEM', 'UNIT', 'UNIT PRICE', 'PRICE'), $label_format);
 
   $row++;
   return $row;
@@ -427,11 +428,11 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $category_sty
       $row++;
     }
 
-    $sheet->write($row, 0, $details->name, $item_style);
-    $sheet->write($row, 1, $details->unit, $item_style);
-    $sheet->write($row, 2, $details->price, $item_money_style);
-    $sheet->write($row, 3, $details->qty, $item_style);
-    $sheet->writeFormula($row, 4, '=C'. ($row+1) .'*D'. ($row+1), $item_money_style);
+    $sheet->write($row, 0, $details->qty, $item_style);
+    $sheet->write($row, 1, $details->name, $item_style);
+    $sheet->write($row, 2, $details->unit, $item_style);
+    $sheet->write($row, 3, $details->price, $item_money_style);
+    $sheet->writeFormula($row, 4, '=A'. ($row+1) .'*D'. ($row+1), $item_money_style);
 
     $row++;
   }
@@ -452,11 +453,11 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $category_sty
 
   $first_overstock_row = $row;
   for ($i = 0; $i < 6; $i++) {
-    $sheet->write($row, 0, '', $item_style);
+    $sheet->write($row, 0, 0, $item_style);
     $sheet->write($row, 1, '', $item_style);
-    $sheet->write($row, 2, 0, $item_money_style);
-    $sheet->write($row, 3, 0, $item_style);
-    $sheet->writeFormula($row, 4, '=C'. ($row+1) .'*D'. ($row+1), $item_money_style);
+    $sheet->write($row, 2, '', $item_style);
+    $sheet->write($row, 3, 0, $item_money_style);
+    $sheet->writeFormula($row, 4, '=A'. ($row+1) .'*D'. ($row+1), $item_money_style);
     $row++;
   }
   $last_overstock_row = $row - 1;
