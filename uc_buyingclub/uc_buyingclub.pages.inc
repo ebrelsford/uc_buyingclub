@@ -261,6 +261,7 @@ function uc_buyingclub_view_overstock() {
         "ORDER BY bp2.finalized DESC ".
         "LIMIT 1 ".
       ") ".
+      "AND bp.qty_overstock > 0 ".
     "ORDER BY p.title";
 
   $query_result = db_query($query, $period->ordering_period_id);
