@@ -230,14 +230,14 @@ function uc_buyingclub_finalization_form_submit($form_id, $form) {
  *    The nid of the product node
  * @param $qty_ordered
  *    The quantity ordered through the finalization form
- * @param $qty_current_overstock
+ * @param $qty_old_overstock
  *    The quantity that is currently at hand--should be given to members but NOT ordered from distributors
  * @param $start
  *    The start of the ordering period (in seconds)
  * @param $end
  *    The end of the ordering period (in seconds)
  */
-function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $qty_current_overstock, $start, $end, $status='ordered') {
+function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, $qty_ordered, $qty_old_overstock, $start, $end, $status='ordered') {
   /*
    * first, give everyone who ordered this product their share
    */
@@ -249,7 +249,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
 
   $query_result = db_query($query, $product_id, $start, $end);
 
-  $qty_available = $qty_ordered + $qty_current_overstock;
+  $qty_available = $qty_ordered + $qty_old_overstock;
   $order_product_qty_given = array();
   if ($query_result) {
     while ($row = db_fetch_object($query_result)) {
@@ -318,6 +318,7 @@ function uc_buyingclub_finalize_product_order($product_id, $qty_would_buy_more, 
   $to_write = array(
     'product_id' => $product_id,
     'qty_ordered' => $qty_ordered,
+    'qty_old_overstock' => $qty_old_overstock,
     'qty_overstock' => $qty_available,
     'ordering_period_id' => $ordering_period->ordering_period_id,
     'finalized' => time(),

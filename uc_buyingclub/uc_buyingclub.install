@@ -125,6 +125,14 @@ function uc_buyingclub_schema() {
         'not null' => TRUE,
         'default' => 0,
       ),
+      'qty_old_overstock' => array(
+        'description' => 'The quantity of the product left over from the last ordering period.',
+        'type' => 'int',
+        'size' => 'small',
+        'unsigned' => TRUE,
+        'not null' => TRUE,
+        'default' => 0,
+      ),
       'qty_overstock' => array(
         'description' => 'The quantity of the product expected to be overstock.',
         'type' => 'int',
@@ -229,6 +237,20 @@ function uc_buyingclub_update_6001() {
       'length' => 32,
       'not null' => TRUE,
       'default' => '',
+    ));
+  return $ret;
+}
+
+function uc_buyingclub_update_6002() {
+  $ret = array();
+  db_add_field($ret, 'uc_buyingclub_products', 'qty_old_overstock',
+    array(
+      'description' => 'The quantity of the product left over from the last ordering period.',
+      'type' => 'int',
+      'size' => 'small',
+      'unsigned' => TRUE,
+      'not null' => TRUE,
+      'default' => 0,
     ));
   return $ret;
 }
