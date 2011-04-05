@@ -448,6 +448,7 @@ function uc_buyingclub_received_items_form($rows) {
       // what do we already know about the quantities?
       $unit_order_expected = $product->qty_ordered;
       $case_order_expected = $unit_order_expected / $case_size;
+      $old_overstock = $product->qty_old_overstock;
       $expected_overstock = $product->qty_overstock;
 
       // pack up the form
@@ -463,7 +464,7 @@ function uc_buyingclub_received_items_form($rows) {
       );
       $form[$id]['current_overstock_'. $id] = array(
         '#type' => 'textfield',
-        '#default_value' => '0',
+        '#default_value' => $old_overstock,
         '#maxlength' => 3,
         '#size' => 3,
         '#required' => FALSE,
@@ -598,7 +599,7 @@ function _uc_buyingclub_received_items_get_orders_to_finalize($ordering_period_i
   $minimum_order_table = _uc_buyingclub_get_minimum_order_table();
   $minimum_order_column = _uc_buyingclub_get_minimum_order_column();
 
-  $query = "SELECT p.title AS product_name, p.nid AS product_id, SUM(op.qty) AS order_product_qty, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order, pr.cost, bp.qty_ordered AS qty_ordered, bp.qty_overstock AS qty_overstock ".
+  $query = "SELECT p.title AS product_name, p.nid AS product_id, SUM(op.qty) AS order_product_qty, d.title AS distributor_name, ctd2.". $minimum_order_column ." AS minimum_order, pr.cost, bp.qty_ordered AS qty_ordered, bp.qty_overstock AS qty_overstock, bp.qty_old_overstock AS qty_old_overstock ".
     "FROM {uc_orders} o, {uc_order_products} op, {node} p, {node} d, {". $distributor_table ."} ctd, {". $minimum_order_table ."} ctd2, {uc_products} pr, {uc_buyingclub_products} bp, {uc_buyingclub_ordering_periods} period ".
     "WHERE op.order_id=o.order_id AND p.nid=op.nid ".
       // products in this ordering period
