@@ -250,28 +250,9 @@ function uc_buyingclub_view_ordering_periods() {
 function uc_buyingclub_view_overstock() {
   // find start of most recent ordering period
   $period = _uc_buyingclub_get_most_recent_ordering_period();
-
-  $unit_table = _uc_buyingclub_get_unit_table();
-  $unit_column = _uc_buyingclub_get_unit_column();
-
-  $query = "SELECT p.title as 'item', unit_table.". $unit_column ." as unit, pr.sell_price as 'member price', bp.qty_overstock as 'expected overstock' ".
-    "FROM {node} p, {uc_products} pr, {uc_buyingclub_products} bp, {". $unit_table ."} unit_table ".
-    "WHERE pr.nid=p.nid and bp.product_id=p.nid AND bp.ordering_period_id=%d ".
-      "AND unit_table.vid=p.vid ".
-      "AND bp.uc_buyingclub_product_id = ( ".
-        "SELECT bp2.uc_buyingclub_product_id ".
-        "FROM {uc_buyingclub_products} bp2 ".
-        "WHERE bp2.product_id = bp.product_id ".
-        "ORDER BY bp2.finalized DESC ".
-        "LIMIT 1 ".
-      ") ".
-      "AND bp.qty_overstock > 0 ".
-    "ORDER BY p.title";
-
-  $query_result = db_query($query, $period->ordering_period_id);
-
   $out = _uc_buyingclub_get_ordering_period_header($period->start, $period->end);
 
+  $query_result = _uc_buyingclub_get_overstock($period->ordering_period_id);
   if ($query_result) {
     $overall_price = 0;
     while ($row = db_fetch_array($query_result)) {
@@ -306,6 +287,7 @@ function uc_buyingclub_view_reports() {
   $out .= theme_item_list(array(
       l(t('Download grid view'), 'buyingclub/export/grid/'. $period->ordering_period_id .'/csv'),
       l(t('View overstock'), 'buyingclub/view/overstock/'),
+      l(t('Download overstock'), 'buyingclub/export/overstock/'. $period->ordering_period_id .'/xls'),
       l(t('View finalized orders, by member'), 'buyingclub/view/finalized/by_user'),
       l(t('View finalized orders, by distributor'), 'buyingclub/view/finalized/by_distributor'),
       l(t('Download invoices'), 'buyingclub/export/invoices/'. $period->ordering_period_id .'/xls'),

@@ -185,6 +185,76 @@ function uc_buyingclub_download_check_out_list($ordering_period_id) {
   unset($objPHPExcel);
 }
 
+function uc_buyingclub_download_overstock($ordering_period_id) {
+  require_once 'PHPExcel.php';
+  require_once 'PHPExcel/Writer/Excel2007.php';
+
+  $objPHPExcel = new PHPExcel();
+
+  // Set properties
+  $objPHPExcel->getProperties()->setTitle("Overstock");
+  $objPHPExcel->getProperties()->setSubject("Overstock");
+  $objPHPExcel->getProperties()->setDescription("Overstock");
+
+  // Add some data
+  $objPHPExcel->setActiveSheetIndex(0);
+
+  $result = _uc_buyingclub_get_overstock($ordering_period_id);
+  $row = 1;
+
+  $sheet = $objPHPExcel->getActiveSheet();
+
+  $sheet->getColumnDimension('A')->setAutoSize(true);
+  $sheet->getColumnDimension('B')->setAutoSize(true);
+  $sheet->getColumnDimension('C')->setAutoSize(true);
+  $sheet->getColumnDimension('D')->setAutoSize(true);
+  $sheet->getColumnDimension('E')->setAutoSize(true);
+  
+  $sheet->setCellValueByColumnAndRow(0, $row, 'Item');
+  $sheet->setCellValueByColumnAndRow(1, $row, 'Unit');
+  $sheet->setCellValueByColumnAndRow(2, $row, 'Expected Overstock');
+  $sheet->setCellValueByColumnAndRow(3, $row, 'Member Price');
+  $sheet->setCellValueByColumnAndRow(4, $row, 'Total Price');
+  $sheet->getStyle('A'.$row.':E'.$row)->applyFromArray(array(
+    'font' => array(
+      'bold' => true, 
+      'color' => array('rgb' => 'FFFFFF'),
+    ),
+    'fill' => array(
+      'type' => PHPExcel_Style_Fill::FILL_SOLID, 
+      'color' => array('rgb' => '000000'),
+    ),
+  ));
+  $row++;
+
+  $first_item_row = $row;
+  while ($arr = db_fetch_array($result)) {
+    dsm($arr);
+    $sheet->setCellValueByColumnAndRow(0, $row, $arr['item']);
+    $sheet->setCellValueByColumnAndRow(1, $row, $arr['unit']);
+    $sheet->setCellValueByColumnAndRow(2, $row, $arr['expected overstock']);
+    $sheet->setCellValueByColumnAndRow(3, $row, $arr['member price']);
+    $sheet->setCellValueByColumnAndRow(4, $row, '=C'.$row.'*D'.$row);
+    $row++;
+  }
+  $sheet->getStyle('D'.$first_item_row.':E'.$row)->getNumberFormat()->setFormatCode('$#,##0.00');
+
+  $sheet->setCellValueByColumnAndRow(0, $row, 'total');
+  $sheet->setCellValueByColumnAndRow(4, $row, '=SUM(E'. $first_item_row .':E'. ($row-1) .')');
+
+  // Rename sheet
+  $sheet->setTitle('Overstock');
+
+  _uc_buyingclub_set_excel_headers('overstock ' . date('Ymd') . '.xlsx');
+      
+  // Save Excel 2007 file
+  $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+  $objWriter->save('php://output');
+
+  $objPHPExcel->disconnectWorksheets();
+  unset($objPHPExcel);
+}
+
 function _uc_buyingclub_set_excel_headers($filename) {
   header("Last-Modified: " . gmdate("D, d M Y H:i:s") . " GMT");
   header("Cache-Control: no-store, no-cache, must-revalidate");
