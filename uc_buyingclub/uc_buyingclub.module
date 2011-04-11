@@ -148,6 +148,14 @@ function uc_buyingclub_menu() {
     'file' => 'uc_buyingclub.export.inc',
   );
 
+  $items['buyingclub/export/by_product/%/xls'] = array(
+    'access arguments' => array('access uc_buyingclub reports'),
+    'page arguments' => array(3),
+    'type' => MENU_CALLBACK,
+    'page callback' => 'uc_buyingclub_download_by_product',
+    'file' => 'uc_buyingclub.export.inc',
+  );
+
   return $items;
 }
 
@@ -341,7 +349,7 @@ function _uc_buyingclub_get_overstock($ordering_period_id) {
 }
 
 /*
- * other data access
+ * ordering period data access
  */
 
 /*

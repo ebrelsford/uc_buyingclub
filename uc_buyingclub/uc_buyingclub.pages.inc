@@ -296,6 +296,7 @@ function uc_buyingclub_view_reports() {
       l(t('Download check out list'), 'buyingclub/export/check_out/'. $period->ordering_period_id .'/xls'),
       l(t('View price list'), 'buyingclub/view/prices'),
       l(t('Download price list'), 'buyingclub/view/prices/xls'),
+      l(t('Download by-product list'), 'buyingclub/export/by_product/'. $period->ordering_period_id .'/xls'),
     ), NULL, 'ul');
 
   return $out;

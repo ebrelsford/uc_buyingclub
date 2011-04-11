@@ -229,7 +229,6 @@ function uc_buyingclub_download_overstock($ordering_period_id) {
 
   $first_item_row = $row;
   while ($arr = db_fetch_array($result)) {
-    dsm($arr);
     $sheet->setCellValueByColumnAndRow(0, $row, $arr['item']);
     $sheet->setCellValueByColumnAndRow(1, $row, $arr['unit']);
     $sheet->setCellValueByColumnAndRow(2, $row, $arr['expected overstock']);
@@ -246,6 +245,82 @@ function uc_buyingclub_download_overstock($ordering_period_id) {
   $sheet->setTitle('Overstock');
 
   _uc_buyingclub_set_excel_headers('overstock ' . date('Ymd') . '.xlsx');
+      
+  // Save Excel 2007 file
+  $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+  $objWriter->save('php://output');
+
+  $objPHPExcel->disconnectWorksheets();
+  unset($objPHPExcel);
+}
+
+function uc_buyingclub_download_by_product($ordering_period_id) {
+  require_once 'PHPExcel.php';
+  require_once 'PHPExcel/Writer/Excel2007.php';
+
+  $objPHPExcel = new PHPExcel();
+
+  // Set properties
+  $objPHPExcel->getProperties()->setTitle("By-product");
+  $objPHPExcel->getProperties()->setSubject("By-product");
+  $objPHPExcel->getProperties()->setDescription("By-product");
+
+  // Add some data
+  $objPHPExcel->setActiveSheetIndex(0);
+
+  $result = _uc_buyingclub_get_overstock($ordering_period_id);
+
+  $new_order_ids = _uc_buyingclub_download_by_product_get_new_order_ids($ordering_period_id);
+
+
+  $sheet = $objPHPExcel->getActiveSheet();
+
+  $sheet->getColumnDimension('A')->setAutoSize(true);
+  $sheet->getColumnDimension('B')->setAutoSize(true);
+  $sheet->getColumnDimension('C')->setAutoSize(true);
+
+  $product_start_rows = array();
+  $row = 1;
+
+  $products = _uc_buyingclub_download_by_product_get_products_ordered($ordering_period_id);
+  foreach ($products as $product) {
+    $sheet->setCellValueByColumnAndRow(0, $row, $product->name ." (". $product->unit .")");
+    $row += 2;
+  
+    $sheet->setCellValueByColumnAndRow(0, $row, 'Order #');
+    $sheet->setCellValueByColumnAndRow(1, $row, 'Name');
+    $sheet->setCellValueByColumnAndRow(2, $row, 'Quantity');
+    $sheet->getStyle('A'.$row.':C'.$row)->applyFromArray(array(
+      'font' => array(
+        'bold' => true, 
+        'color' => array('rgb' => 'FFFFFF'),
+      ),
+      'fill' => array(
+        'type' => PHPExcel_Style_Fill::FILL_SOLID, 
+        'color' => array('rgb' => '000000'),
+      ),
+    ));
+    $row++;
+
+    $order_products = _uc_buyingclub_download_by_product_get_order_products_ordered($ordering_period_id, $product->id);
+    foreach ($order_products as $order_product) {
+      $sheet->setCellValueByColumnAndRow(0, $row, $new_order_ids[$order_product->order_id]);
+      $sheet->setCellValueByColumnAndRow(1, $row, $order_product->last .', '. $order_product->first);
+      $sheet->setCellValueByColumnAndRow(2, $row, $order_product->qty);
+      $row++;
+    }
+
+    $sheet->setCellValueByColumnAndRow(1, $row, "OVERSTOCK");
+    $sheet->setCellValueByColumnAndRow(2, $row, $product->qty_overstock);
+    $row++;
+
+    $sheet->setBreak('A'. ($row-1), PHPExcel_Worksheet::BREAK_ROW);
+  }
+
+  // Rename sheet
+  $sheet->setTitle('By product');
+
+  _uc_buyingclub_set_excel_headers('by product ' . date('Ymd') . '.xlsx');
       
   // Save Excel 2007 file
   $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
@@ -720,6 +795,76 @@ function _uc_buyingclub_download_grid_get_ordered_products($ordering_period_id) 
   }
 
   return $products;
+}
+
+/*
+ * Get new order numbers, alphabetically ordered
+ */
+function _uc_buyingclub_download_by_product_get_new_order_ids($ordering_period_id) {
+  $query = "SELECT o.order_id as id, o.billing_first_name as first, o.billing_last_name as last ".
+    "FROM {uc_orders} o, {uc_buyingclub_ordering_periods} ordering_period ".
+    "WHERE o.created > ordering_period.start AND o.created < ordering_period.end ".
+    "AND ordering_period.ordering_period_id=%d  AND (o.order_status = 'completed' OR o.order_status = 'pending') ".
+    "ORDER BY o.billing_last_name, o.billing_first_name";
+
+  $result = db_query($query, $ordering_period_id);
+  $new_order_id = 1;
+  $orders = array();
+
+  while ($obj = db_fetch_object($result)) {
+    $orders[$obj->id] = $new_order_id;
+    $new_order_id++;
+  }
+
+  return $orders;
+}
+
+function _uc_buyingclub_download_by_product_get_products_ordered($ordering_period_id) {
+  $unit_table = _uc_buyingclub_get_unit_table();
+  $unit_column = _uc_buyingclub_get_unit_column();
+
+  $query = "SELECT p.nid as id, p.title as name, unit_table.". $unit_column ." as unit, bp.qty_overstock as qty_overstock ".
+    "FROM {uc_buyingclub_products} bp, {node} p, {". $unit_table ."} unit_table ".
+    "WHERE bp.product_id=p.nid AND bp.ordering_period_id=%d AND unit_table.vid=p.vid ".
+    "AND bp.uc_buyingclub_product_id = ( ".
+        "SELECT bp2.uc_buyingclub_product_id ".
+        "FROM {uc_buyingclub_products} bp2 ".
+        "WHERE bp2.product_id = p.nid ".
+        "ORDER BY bp2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
+    "ORDER BY p.title ";
+
+  $products = array();
+  $result = db_query($query, $ordering_period_id);
+  while ($obj = db_fetch_object($result)) {
+    $products[] = $obj;
+  }
+
+  return $products;
+}
+
+function _uc_buyingclub_download_by_product_get_order_products_ordered($ordering_period_id, $product_id) {
+  $unit_table = _uc_buyingclub_get_unit_table();
+  $unit_column = _uc_buyingclub_get_unit_column();
+
+  $query = "SELECT o.order_id as order_id, o.billing_last_name as last, o.billing_first_name as first, bop.qty as qty ".
+    "FROM {uc_buyingclub_order_products} bop, {uc_orders} o, {uc_order_products} op, {uc_buyingclub_ordering_periods} period ".
+    "WHERE bop.order_product_id=op.order_product_id AND op.order_id=o.order_id ".
+    "AND o.created > period.start AND o.created < period.end ".
+    "AND (o.order_status = 'pending' OR o.order_status = 'completed') ".
+    "AND period.ordering_period_id=%d  ".
+    "AND op.nid=%d  ".
+    "GROUP BY op.order_product_id ".
+    "ORDER BY o.billing_last_name, o.billing_first_name ";
+
+  $order_products = array();
+  $result = db_query($query, $ordering_period_id, $product_id);
+  while ($obj = db_fetch_object($result)) {
+    $order_products[] = $obj;
+  }
+
+  return $order_products;
 }
 
 function _uc_buyingclub_export_table_as_csv($name, $header=NULL, $table) {
