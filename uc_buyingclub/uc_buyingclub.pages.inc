@@ -251,9 +251,13 @@ function uc_buyingclub_view_overstock() {
   // find start of most recent ordering period
   $period = _uc_buyingclub_get_most_recent_ordering_period();
 
-  $query = "SELECT p.title as 'item', pr.cost as 'cost', pr.sell_price as 'member price', bp.qty_overstock as 'expected overstock' ".
-    "FROM {node} p, {uc_products} pr, {uc_buyingclub_products} bp ".
+  $unit_table = _uc_buyingclub_get_unit_table();
+  $unit_column = _uc_buyingclub_get_unit_column();
+
+  $query = "SELECT p.title as 'item', unit_table.". $unit_column ." as unit, pr.sell_price as 'member price', bp.qty_overstock as 'expected overstock' ".
+    "FROM {node} p, {uc_products} pr, {uc_buyingclub_products} bp, {". $unit_table ."} unit_table ".
     "WHERE pr.nid=p.nid and bp.product_id=p.nid AND bp.ordering_period_id=%d ".
+      "AND unit_table.vid=p.vid ".
       "AND bp.uc_buyingclub_product_id = ( ".
         "SELECT bp2.uc_buyingclub_product_id ".
         "FROM {uc_buyingclub_products} bp2 ".
@@ -269,28 +273,28 @@ function uc_buyingclub_view_overstock() {
   $out = _uc_buyingclub_get_ordering_period_header($period->start, $period->end);
 
   if ($query_result) {
-    $overall_cost = 0;
+    $overall_price = 0;
     while ($row = db_fetch_array($query_result)) {
-      $total_cost = $row['cost'] * $row['expected overstock'];
-      $overall_cost += $total_cost;
-      $row[] = $total_cost;
+      $total_price = $row['member price'] * $row['expected overstock'];
+      $overall_price += $total_price;
+      $row[] = $total_price;
 
       $data[] = array(
         $row['item'],
-        uc_currency_format($row['cost']),
-        uc_currency_format($row['member price']),
+        $row['unit'],
         $row['expected overstock'],
-        uc_currency_format($total_cost),
+        uc_currency_format($row['member price']),
+        uc_currency_format($total_price),
       );
     }
-    $data[] = array('','','', 'total', uc_currency_format($overall_cost));
+    $data[] = array('total', '', '', '', uc_currency_format($overall_price));
   }
   else {
     return $out ."No orders or overstock to show";
   }
 
   // theme table
-  return $out . theme_table(array('Item', 'Cost', 'Member Price', 'Expected Overstock', 'Total Cost'), $data);
+  return $out . theme_table(array('Item', 'Unit', 'Expected Overstock', 'Member Price', 'Total Price'), $data);
 }
 
 function uc_buyingclub_view_reports() {
