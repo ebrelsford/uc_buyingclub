@@ -3,7 +3,9 @@
 uc_buyingclub
 -------------
 
-A Drupal module built on Ubercart that performs some buying club-specific functions.
+uc_buyingclub helps your group or budding food cooperative run a buying club on top of Ubercart and Drupal. 
+
+It gives buying club members access to an order form during ordering periods. Once an ordering period is over, a buying club coordinator can decide how many cases of each item should be ordered and download the orders for each distributor, and this sends an updated invoice to each buying club member. On distribution day, a buying club coordinator can update the quantities actually received from distributors, and this updates the invoices for each buying club member.
 
 
 INSTALLATION
@@ -37,11 +39,29 @@ To see ordering periods, go to
  * buyingclub/view/periods
 
 
+MODULES
+-------
+
+uc_buyingclub's functionality is split over a number of modules:
+ * uc_buyingclub
+  * The main module, containing the basics-letting coordinators "finalize" orders at the end of an ordering period.
+ * uc_buyingclub_cart
+  * Modifies uc_cart. Currently shows units in the cart.
+ * uc_buyingclub_catalog
+  * Modifies uc_catalog. Currently changes the breadcrumbs, shows members the start and end of the most recent or current ordering period.
+ * uc_buyingclub_civicrm
+  * Grabs members' contact information from CiviCRM.
+ * uc_buyingclub_multibuy
+  * Modifies uc_multibuy. Adds relevant bits (eg, distributors) to tables.
+ * uc_buyingclub_product
+  * Modifies uc_product. Conveniently calculates unit cost/price based on case size and cost, adding a markup as desired.
+
+
 TODO
 ----
 
 While the concept of ordering periods exists, the module does not allow a buying club manager to pick an ordering period.
 
-Track overstock (the amount ordered from distributors that wasn't ordered by members).
-
 Make updated invoices more easily themed and configured by buying club managers.
+
+Most things need to be made configurable.
