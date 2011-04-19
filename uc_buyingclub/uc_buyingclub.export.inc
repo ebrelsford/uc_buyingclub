@@ -285,6 +285,7 @@ function uc_buyingclub_download_by_product($ordering_period_id) {
   $products = _uc_buyingclub_download_by_product_get_products_ordered($ordering_period_id);
   foreach ($products as $product) {
     $sheet->setCellValueByColumnAndRow(0, $row, $product->name ." (". $product->unit .")");
+    $sheet->mergeCells('A'. $row .':C'. $row);
     $row += 2;
   
     $sheet->setCellValueByColumnAndRow(0, $row, 'Order #');
@@ -855,6 +856,7 @@ function _uc_buyingclub_download_by_product_get_order_products_ordered($ordering
     "AND (o.order_status = 'pending' OR o.order_status = 'completed') ".
     "AND period.ordering_period_id=%d  ".
     "AND op.nid=%d  ".
+    "AND bop.qty > 0 ".
     "GROUP BY op.order_product_id ".
     "ORDER BY o.billing_last_name, o.billing_first_name ";
 
