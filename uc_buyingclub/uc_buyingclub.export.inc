@@ -447,13 +447,30 @@ function uc_buyingclub_download_grid($ordering_period_id) {
  * Get invoices for the given ordering period as an excel file
  */
 function uc_buyingclub_download_invoices($ordering_period_id) {
-  require_once 'Spreadsheet/Excel/Writer.php';
+  require_once 'PHPExcel.php';
+  require_once 'PHPExcel/Writer/Excel2007.php';
 
-  $workbook = new Spreadsheet_Excel_Writer();
-  $workbook->setVersion(8);
+  $objPHPExcel = new PHPExcel();
 
-  $workbook->send('buyingclub_invoices_'. date('Ymd') .'.xls');
+  $objPHPExcel->getProperties()->setTitle("Invoices");
+  $objPHPExcel->getProperties()->setSubject("Invoices");
+  $objPHPExcel->getProperties()->setDescription("Invoices");
 
+  $objPHPExcel->setActiveSheetIndex(0);
+
+  $sheet = $objPHPExcel->getActiveSheet();
+
+  $header_label_format = array(
+    'font' => array(
+      'bold' => true, 
+      'color' => array('rgb' => 'FFFFFF'),
+    ),
+    'fill' => array(
+      'type' => PHPExcel_Style_Fill::FILL_SOLID, 
+      'color' => array('rgb' => '000000'),
+    ),
+  );
+  /*
   $header_label_format =& $workbook->addFormat(array(
     'pattern'=>1,
     'fgcolor'=>23,
@@ -492,76 +509,151 @@ function uc_buyingclub_download_invoices($ordering_period_id) {
     'fgcolor'=>23,
   ));
   $details_total_money_style->setNumFormat('$#,##0.00');
+   */
 
-  $worksheet =& $workbook->addWorksheet('invoices');
+  $sheet->getColumnDimension('A')->setAutoSize(true);
+  $sheet->getColumnDimension('B')->setAutoSize(true);
+  $sheet->getColumnDimension('C')->setAutoSize(true);
+  $sheet->getColumnDimension('D')->setAutoSize(true);
+  $sheet->getColumnDimension('E')->setAutoSize(true);
 
-  $worksheet->setColumn(0, 0, 10010);
-  $worksheet->setColumn(1, 1, 0x000D);
-  $worksheet->setColumn(2, 2, 0x000D);
-  $worksheet->setColumn(3, 3, 0x000D);
-  $worksheet->setColumn(4, 4, 0x000D);
-  $worksheet->hideGridlines();
-
-  $row = 0;
+  $row = 1;
   $new_order_id = 1;
-  $breaks = array();
   foreach (_uc_buyingclub_download_invoices_get_orders($ordering_period_id) as $order) {
-    $row = _uc_buyingclub_download_invoices_write_header($new_order_id, $order->first, $order->last, $order->email, $order->phone, $header_label_format, $header_value_format, &$worksheet, &$row);
-    $row = _uc_buyingclub_download_invoices_write_details($order->order_id, $details_category_style, $details_item_style, $details_item_money_style, $details_total_style, $details_item_money_style, &$worksheet, &$row);
+    $row = _uc_buyingclub_download_invoices_write_header($new_order_id, $order->first, $order->last, $order->email, $order->phone, $sheet, &$row);
+    $row = _uc_buyingclub_download_invoices_write_details($order->order_id, $sheet, &$row);
 
-    $breaks[] = $row+1;
     $row++;
     $new_order_id++;
+
+    $sheet->setBreak('A'. ($row-1), PHPExcel_Worksheet::BREAK_ROW);
   }
 
-  $worksheet->setHPagebreaks($breaks);
-  $workbook->close();
+  $sheet->setTitle('Invoices');
+
+  _uc_buyingclub_set_excel_headers('invoices ' . date('Ymd') . '.xlsx');
+      
+  // Save Excel 2007 file
+  $objWriter = new PHPExcel_Writer_Excel2007($objPHPExcel);
+  $objWriter->save('php://output');
+
+  $objPHPExcel->disconnectWorksheets();
+  unset($objPHPExcel);
 }
 
-function _uc_buyingclub_download_invoices_write_header($id, $first, $last, $email, $phone, $label_format, $value_format, &$sheet, &$row) {
+function _uc_buyingclub_download_invoices_write_header($id, $first, $last, $email, $phone, $sheet, &$row) {
+  $first_header_row = $row;
 
-  $sheet->write($row, 0, 'Greene Hill Food Co-op');
-  $sheet->write($row, 1, 'Order Number', $label_format);
-  $sheet->write($row, 3, $id, $value_format);
-  $sheet->setMerge($row, 1, $row, 2);
-  $sheet->setMerge($row, 3, $row, 4);
+  $sheet->setCellValueByColumnAndRow(0, $row, 'Greene Hill Food Co-op');
+  $sheet->setCellValueByColumnAndRow(1, $row, 'Order Number');
+  $sheet->setCellValueByColumnAndRow(3, $row, $id);
+  $sheet->mergeCells('B'. $row .':C'. $row);
+  $sheet->mergeCells('D'. $row .':E'. $row);
   $row++;
 
-  $sheet->write($row, 0, 'Buying Club Order Confirmation');
-  $sheet->write($row, 1, 'First Name', $label_format);
-  $sheet->write($row, 3, $first, $value_format);
-  $sheet->setMerge($row, 1, $row, 2);
-  $sheet->setMerge($row, 3, $row, 4);
+  $sheet->setCellValueByColumnAndRow(0, $row, 'Buying Club Order Confirmation');
+  $sheet->setCellValueByColumnAndRow(1, $row, 'First Name');
+  $sheet->setCellValueByColumnAndRow(3, $row, $first);
+  $sheet->mergeCells('B'. $row .':C'. $row);
+  $sheet->mergeCells('D'. $row .':E'. $row);
   $row++;
 
   $date_format = 'l\, M jS Y';
-  $sheet->write($row, 0, date($date_format));
-  $sheet->write($row, 1, 'Last Name', $label_format);
-  $sheet->write($row, 3, $last, $value_format);
-  $sheet->setMerge($row, 1, $row, 2);
-  $sheet->setMerge($row, 3, $row, 4);
+  $sheet->setCellValueByColumnAndRow(0, $row, date($date_format));
+  $sheet->setCellValueByColumnAndRow(1, $row, 'Last Name');
+  $sheet->setCellValueByColumnAndRow(3, $row, $last);
+  $sheet->mergeCells('B'. $row .':C'. $row);
+  $sheet->mergeCells('D'. $row .':E'. $row);
   $row++;
 
-  $sheet->write($row, 1, 'Email Address', $label_format);
-  $sheet->write($row, 3, $email, $value_format);
-  $sheet->setMerge($row, 1, $row, 2);
-  $sheet->setMerge($row, 3, $row, 4);
+  $sheet->setCellValueByColumnAndRow(1, $row, 'Email Address');
+  $sheet->setCellValueByColumnAndRow(3, $row, $email);
+  $sheet->mergeCells('B'. $row .':C'. $row);
+  $sheet->mergeCells('D'. $row .':E'. $row);
   $row++;
 
-  $sheet->write($row, 1, 'Phone', $label_format);
-  $sheet->write($row, 3, $phone, $value_format);
-  $sheet->setMerge($row, 1, $row, 2);
-  $sheet->setMerge($row, 3, $row, 4);
+  $sheet->setCellValueByColumnAndRow(1, $row, 'Phone');
+  $sheet->setCellValueByColumnAndRow(3, $row, $phone);
+  $sheet->mergeCells('B'. $row .':C'. $row);
+  $sheet->mergeCells('D'. $row .':E'. $row);
+
+  $sheet->getStyle('B'. $first_header_row .':C'. $row)->applyFromArray(array(
+    'fill' => array(
+      'type' => PHPExcel_Style_Fill::FILL_SOLID,
+      'color' => array('rgb' => '929292'),
+    ),
+    'borders' => array(
+      'horizontal' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+      'bottom' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+    ),
+  ));
+  $sheet->getStyle('D'. $first_header_row .':E'. $row)->applyFromArray(array(
+    'borders' => array(
+      'horizontal' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+      'bottom' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+    ),
+    'alignment' => array(
+      'horizontal' => PHPExcel_Style_Alignment::HORIZONTAL_LEFT,
+    ),
+  ));
+
   $row++;
   $row++;
 
-  $sheet->writeRow($row, 0, array('QUANTITY', 'ITEM', 'UNIT', 'UNIT PRICE', 'PRICE'), $label_format);
+  $sheet->setCellValueByColumnAndRow(0, $row, 'QUANTITY');
+  $sheet->setCellValueByColumnAndRow(1, $row, 'ITEM');
+  $sheet->setCellValueByColumnAndRow(2, $row, 'UNIT');
+  $sheet->setCellValueByColumnAndRow(3, $row, 'UNIT PRICE');
+  $sheet->setCellValueByColumnAndRow(4, $row, 'PRICE');
+
+  $sheet->getStyle('A'. $row .':E'. $row)->applyFromArray(array(
+    'fill' => array(
+      'type' => PHPExcel_Style_Fill::FILL_SOLID,
+      'color' => array('rgb' => '929292'),
+    ),
+    'borders' => array(
+      'horizontal' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+      'bottom' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+    ),
+  ));
 
   $row++;
   return $row;
 }
 
-function _uc_buyingclub_download_invoices_write_details($order_id, $category_style, $item_style, $item_money_style, $total_style, $total_money_style, &$sheet, &$row) {
+function _uc_buyingclub_download_invoices_write_details($order_id, $sheet, &$row) {
+  $category_style = array(
+    'fill' => array(
+      'type' => PHPExcel_Style_Fill::FILL_SOLID,
+      'color' => array('rgb' => 'CBCBCB'),
+    ),
+  );
+  $details_style = array(
+    'borders' => array(
+      'inside' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+      'bottom' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+      'right' => array(
+        'style' => PHPExcel_Style_Border::BORDER_THIN,
+      ),
+    ),
+  );
+
   $first_detail_row = $row;
 
   $current_category = '';
@@ -569,59 +661,64 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $category_sty
     if ($details->qty == 0) continue;
     if ($details->category != $current_category) {
       $current_category = $details->category;
-      $sheet->write($row, 0, $current_category, $category_style);
-      $sheet->setMerge($row, 0, $row, 4);
+      $sheet->setCellValueByColumnAndRow(0, $row, $current_category);
+      $sheet->mergeCells('A'. $row .':E'. $row);
+      $sheet->getStyle('A'. $row .':E'. $row)->applyFromArray($category_style);
       $row++;
     }
 
-    $sheet->write($row, 0, $details->qty, $item_style);
-    $sheet->write($row, 1, $details->name, $item_style);
-    $sheet->write($row, 2, $details->unit, $item_style);
-    $sheet->write($row, 3, $details->price, $item_money_style);
-    $sheet->writeFormula($row, 4, '=A'. ($row+1) .'*D'. ($row+1), $item_money_style);
+    $sheet->setCellValueByColumnAndRow(0, $row, $details->qty);
+    $sheet->setCellValueByColumnAndRow(1, $row, $details->name);
+    $sheet->setCellValueByColumnAndRow(2, $row, $details->unit);
+    $sheet->setCellValueByColumnAndRow(3, $row, $details->price);
+    $sheet->setCellValueByColumnAndRow(4, $row, '=A'. $row .'*D'. $row);
 
     $row++;
   }
-  $last_detail_row = $row;
+  $last_detail_row = $row - 1;
 
   $orig_subtotal_row = $row;
 
-  $sheet->write($row, 2, 'Subtotal', $total_style);
-  $sheet->setMerge($row, 2, $row, 3);
-  $sheet->writeFormula($row, 4, '=SUM(E'. ($first_detail_row) .':E'. ($last_detail_row) .')', $total_money_style);
+  $sheet->getStyle('A'. $first_detail_row .':E'. $last_detail_row)->applyFromArray($details_style);
+  $sheet->getStyle('D'. $first_detail_row .':E'. $row)->getNumberFormat()->setFormatCode('$#,##0.00');
+
+  $sheet->setCellValueByColumnAndRow(2, $row, 'Subtotal');
+  $sheet->setCellValueByColumnAndRow(4, $row, '=SUM(E'. ($first_detail_row) .':E'. ($last_detail_row) .')');
+  $sheet->mergeCells('C'. $row .':D'. $row);
 
   $row += 2;
 
-  $sheet->write($row, 0, 'overstock', $category_style);
-  $sheet->setMerge($row, 0, $row, 4);
-
+  $sheet->setCellValueByColumnAndRow(0, $row, 'overstock');
+  $sheet->mergeCells('A'. $row .':E'. $row);
+  $sheet->getStyle('A'. $row .':E'. $row)->applyFromArray($category_style);
   $row++;
 
   $first_overstock_row = $row;
   for ($i = 0; $i < 6; $i++) {
-    $sheet->write($row, 0, 0, $item_style);
-    $sheet->write($row, 1, '', $item_style);
-    $sheet->write($row, 2, '', $item_style);
-    $sheet->write($row, 3, 0, $item_money_style);
-    $sheet->writeFormula($row, 4, '=A'. ($row+1) .'*D'. ($row+1), $item_money_style);
+    $sheet->setCellValueByColumnAndRow(0, $row, 0);
+    $sheet->setCellValueByColumnAndRow(3, $row, 0);
+    $sheet->setCellValueByColumnAndRow(4, $row, '=A'. $row .'*D'. $row);
     $row++;
   }
   $last_overstock_row = $row - 1;
 
+  $sheet->getStyle('A'. $first_overstock_row .':E'. $last_overstock_row)->applyFromArray($details_style);
+  $sheet->getStyle('D'. $first_overstock_row .':E'. $row)->getNumberFormat()->setFormatCode('$#,##0.00');
+
   $overstock_subtotal_row = $row;
-  $sheet->write($row, 2, 'Overstock Subtotal', $total_style);
-  $sheet->setMerge($row, 2, $row, 3);
-  $sheet->writeFormula($row, 4, '=SUM(E'. ($first_overstock_row + 1) .':E'. ($last_overstock_row + 1) .')', $total_money_style);
+  $sheet->setCellValueByColumnAndRow(2, $row, 'Overstock Subtotal');
+  $sheet->setCellValueByColumnAndRow(4, $row, '=SUM(E'. $first_overstock_row .':E'. $last_overstock_row .')');
+  $sheet->mergeCells('C'. $row .':D'. $row);
   $row++;
 
-  $sheet->write($row, 2, 'Total', $total_style);
-  $sheet->setMerge($row, 2, $row, 3);
-  $sheet->writeFormula($row, 4, '=SUM(E'. ($orig_subtotal_row + 1) .';E'. ($overstock_subtotal_row + 1) .')', $total_money_style);
+  $sheet->setCellValueByColumnAndRow(2, $row, 'Total');
+  $sheet->setCellValueByColumnAndRow(4, $row, '=E'. $orig_subtotal_row .'+E'. $overstock_subtotal_row);
+  $sheet->mergeCells('C'. $row .':D'. $row);
   $row++;
 
   $row++;
-  $sheet->write($row, 0, 'comments');
-  $sheet->write($row, 1, _uc_buyingclub_download_invoices_get_order_comment($order_id));
+  $sheet->setCellValueByColumnAndRow(0, $row, 'comments');
+  $sheet->setCellValueByColumnAndRow(1, $row, _uc_buyingclub_download_invoices_get_order_comment($order_id));
   $row++;
 
   return $row;

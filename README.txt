@@ -8,10 +8,16 @@ uc_buyingclub helps your group or budding food cooperative run a buying club on 
 It gives buying club members access to an order form during ordering periods. Once an ordering period is over, a buying club coordinator can decide how many cases of each item should be ordered and download the orders for each distributor, and this sends an updated invoice to each buying club member. On distribution day, a buying club coordinator can update the quantities actually received from distributors, and this updates the invoices for each buying club member.
 
 
+REQUIREMENTS
+------------
+
+PHPExcel (http://phpexcel.codeplex.com/) for reports.
+
+
 INSTALLATION
 ------------
 
-Install required modules.
+Install required modules and libraries.
 
 Then create a Distributor content type. Distributors are the groups and individuals from which products are ordered.
 
