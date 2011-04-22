@@ -521,7 +521,7 @@ function uc_buyingclub_download_invoices($ordering_period_id) {
   $new_order_id = 1;
   foreach (_uc_buyingclub_download_invoices_get_orders($ordering_period_id) as $order) {
     $row = _uc_buyingclub_download_invoices_write_header($new_order_id, $order->first, $order->last, $order->email, $order->phone, $sheet, &$row);
-    $row = _uc_buyingclub_download_invoices_write_details($order->order_id, $sheet, &$row);
+    $row = _uc_buyingclub_download_invoices_write_body($order->order_id, $sheet, &$row);
 
     $row++;
     $new_order_id++;
@@ -633,7 +633,8 @@ function _uc_buyingclub_download_invoices_write_header($id, $first, $last, $emai
   return $row;
 }
 
-function _uc_buyingclub_download_invoices_write_details($order_id, $sheet, &$row) {
+function _uc_buyingclub_download_invoices_write_body($order_id, $sheet, &$row) {
+  // styles
   $category_style = array(
     'fill' => array(
       'type' => PHPExcel_Style_Fill::FILL_SOLID,
@@ -654,8 +655,8 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $sheet, &$row
     ),
   );
 
+  // ORDER DETAILS rows
   $first_detail_row = $row;
-
   $current_category = '';
   foreach (_uc_buyingclub_download_invoices_get_order_details($order_id) as $details) {
     if ($details->qty == 0) continue;
@@ -667,27 +668,22 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $sheet, &$row
       $row++;
     }
 
-    $sheet->setCellValueByColumnAndRow(0, $row, $details->qty);
-    $sheet->setCellValueByColumnAndRow(1, $row, $details->name);
-    $sheet->setCellValueByColumnAndRow(2, $row, $details->unit);
-    $sheet->setCellValueByColumnAndRow(3, $row, $details->price);
-    $sheet->setCellValueByColumnAndRow(4, $row, '=A'. $row .'*D'. $row);
+    _uc_buyingclub_download_invoices_write_body_order($details, $sheet, $row);
 
     $row++;
   }
   $last_detail_row = $row - 1;
-
-  $orig_subtotal_row = $row;
-
   $sheet->getStyle('A'. $first_detail_row .':E'. $last_detail_row)->applyFromArray($details_style);
   $sheet->getStyle('D'. $first_detail_row .':E'. $row)->getNumberFormat()->setFormatCode('$#,##0.00');
 
+  // ORDER SUBTOTAL row
+  $orig_subtotal_row = $row;
   $sheet->setCellValueByColumnAndRow(2, $row, 'Subtotal');
   $sheet->setCellValueByColumnAndRow(4, $row, '=SUM(E'. ($first_detail_row) .':E'. ($last_detail_row) .')');
   $sheet->mergeCells('C'. $row .':D'. $row);
-
   $row += 2;
 
+  // OVERSTOCK rows
   $sheet->setCellValueByColumnAndRow(0, $row, 'overstock');
   $sheet->mergeCells('A'. $row .':E'. $row);
   $sheet->getStyle('A'. $row .':E'. $row)->applyFromArray($category_style);
@@ -701,27 +697,36 @@ function _uc_buyingclub_download_invoices_write_details($order_id, $sheet, &$row
     $row++;
   }
   $last_overstock_row = $row - 1;
-
   $sheet->getStyle('A'. $first_overstock_row .':E'. $last_overstock_row)->applyFromArray($details_style);
   $sheet->getStyle('D'. $first_overstock_row .':E'. $row)->getNumberFormat()->setFormatCode('$#,##0.00');
 
+  // OVERSTOCK SUBTOTAL row
   $overstock_subtotal_row = $row;
   $sheet->setCellValueByColumnAndRow(2, $row, 'Overstock Subtotal');
   $sheet->setCellValueByColumnAndRow(4, $row, '=SUM(E'. $first_overstock_row .':E'. $last_overstock_row .')');
   $sheet->mergeCells('C'. $row .':D'. $row);
   $row++;
 
+  // TOTAL row
   $sheet->setCellValueByColumnAndRow(2, $row, 'Total');
   $sheet->setCellValueByColumnAndRow(4, $row, '=E'. $orig_subtotal_row .'+E'. $overstock_subtotal_row);
   $sheet->mergeCells('C'. $row .':D'. $row);
-  $row++;
+  $row += 2;
 
-  $row++;
+  // COMMENTS row
   $sheet->setCellValueByColumnAndRow(0, $row, 'comments');
   $sheet->setCellValueByColumnAndRow(1, $row, _uc_buyingclub_download_invoices_get_order_comment($order_id));
   $row++;
 
   return $row;
+}
+
+function _uc_buyingclub_download_invoices_write_body_order($order, $sheet, $row) {
+    $sheet->setCellValueByColumnAndRow(0, $row, $order->qty);
+    $sheet->setCellValueByColumnAndRow(1, $row, $order->name);
+    $sheet->setCellValueByColumnAndRow(2, $row, $order->unit);
+    $sheet->setCellValueByColumnAndRow(3, $row, $order->price);
+    $sheet->setCellValueByColumnAndRow(4, $row, '=A'. $row .'*D'. $row);
 }
 
 function _uc_buyingclub_download_invoices_get_order_comment($order_id) {
