@@ -894,10 +894,12 @@ function _uc_buyingclub_download_by_product_get_products_ordered($ordering_perio
   $query = "SELECT p.nid as id, p.title as name, unit_table.". $unit_column ." as unit, bp.qty_overstock as qty_overstock ".
     "FROM {uc_buyingclub_products} bp, {node} p, {". $unit_table ."} unit_table ".
     "WHERE bp.product_id=p.nid AND bp.ordering_period_id=%d AND unit_table.vid=p.vid ".
-    "AND bp.uc_buyingclub_product_id = ( ".
+      "AND (bp.qty_ordered > 0 OR bp.qty_old_overstock > 0) ".
+      "AND bp.uc_buyingclub_product_id = ( ".
         "SELECT bp2.uc_buyingclub_product_id ".
         "FROM {uc_buyingclub_products} bp2 ".
         "WHERE bp2.product_id = p.nid ".
+          "AND bp2.ordering_period_id = bp.ordering_period_id ".
         "ORDER BY bp2.finalized DESC ".
         "LIMIT 1 ".
       ") ".
@@ -921,8 +923,15 @@ function _uc_buyingclub_download_by_product_get_order_products_ordered($ordering
     "WHERE bop.order_product_id=op.order_product_id AND op.order_id=o.order_id ".
       "AND period.ordering_period_id=%d AND o.created > period.start AND o.created < period.end ".
       "AND (o.order_status = 'pending' OR o.order_status = 'completed') ".
-      "AND op.nid=%d  ".
+      "AND op.nid=%d ".
       "AND bop.qty > 0 ".
+      "AND bop.uc_buyingclub_order_product_id = ( ".
+        "SELECT bop2.uc_buyingclub_order_product_id ".
+        "FROM {uc_buyingclub_order_products} bop2 ".
+        "WHERE bop2.order_product_id = bop.order_product_id ".
+        "ORDER BY bop2.finalized DESC ".
+        "LIMIT 1 ".
+      ") ".
     "GROUP BY op.order_product_id ".
     "ORDER BY o.billing_last_name, o.billing_first_name ";
 
