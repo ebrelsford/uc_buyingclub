@@ -470,46 +470,6 @@ function uc_buyingclub_download_invoices($ordering_period_id) {
       'color' => array('rgb' => '000000'),
     ),
   );
-  /*
-  $header_label_format =& $workbook->addFormat(array(
-    'pattern'=>1,
-    'fgcolor'=>23,
-    'bottom'=>1,
-  ));
-
-  $header_value_format =& $workbook->addFormat(array(
-    'bottom'=>1,
-    'align'=>'left',
-  ));
-
-  $details_category_style =& $workbook->addFormat(array(
-    'pattern'=>1,
-    'fgcolor'=>22,
-  ));
-
-  $details_item_style =& $workbook->addFormat(array(
-    'bottom'=>1,
-    'right'=>1,
-    'align'=>'left',
-  ));
-
-  $details_item_money_style =& $workbook->addFormat(array(
-    'bottom'=>1,
-    'right'=>1,
-  ));
-  $details_item_money_style->setNumFormat('$#,##0.00');
-
-  $details_total_style =& $workbook->addFormat(array(
-    'pattern'=>1,
-    'fgcolor'=>23,
-  ));
-
-  $details_total_money_style =& $workbook->addFormat(array(
-    'pattern'=>1,
-    'fgcolor'=>23,
-  ));
-  $details_total_money_style->setNumFormat('$#,##0.00');
-   */
 
   $sheet->getColumnDimension('A')->setAutoSize(true);
   $sheet->getColumnDimension('B')->setAutoSize(true);
