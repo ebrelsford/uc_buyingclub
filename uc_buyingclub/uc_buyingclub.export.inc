@@ -639,7 +639,12 @@ function _uc_buyingclub_download_invoices_write_body($order_id, $sheet, &$row) {
   // ORDER SUBTOTAL row
   $orig_subtotal_row = $row;
   $sheet->setCellValueByColumnAndRow(2, $row, 'Subtotal');
-  $sheet->setCellValueByColumnAndRow(4, $row, '=SUM(E'. ($first_detail_row) .':E'. ($last_detail_row) .')');
+
+  $subtotal = 0;
+  if ($first_detail_row < $last_detail_row) {
+    $subtotal = '=SUM(E'. ($first_detail_row) .':E'. ($last_detail_row) .')';
+  }
+  $sheet->setCellValueByColumnAndRow(4, $row, $subtotal);
   $sheet->mergeCells('C'. $row .':D'. $row);
   $row += 2;
 
@@ -914,11 +919,10 @@ function _uc_buyingclub_download_by_product_get_order_products_ordered($ordering
   $query = "SELECT o.order_id as order_id, o.billing_last_name as last, o.billing_first_name as first, bop.qty as qty ".
     "FROM {uc_buyingclub_order_products} bop, {uc_orders} o, {uc_order_products} op, {uc_buyingclub_ordering_periods} period ".
     "WHERE bop.order_product_id=op.order_product_id AND op.order_id=o.order_id ".
-    "AND o.created > period.start AND o.created < period.end ".
-    "AND (o.order_status = 'pending' OR o.order_status = 'completed') ".
-    "AND period.ordering_period_id=%d  ".
-    "AND op.nid=%d  ".
-    "AND bop.qty > 0 ".
+      "AND period.ordering_period_id=%d AND o.created > period.start AND o.created < period.end ".
+      "AND (o.order_status = 'pending' OR o.order_status = 'completed') ".
+      "AND op.nid=%d  ".
+      "AND bop.qty > 0 ".
     "GROUP BY op.order_product_id ".
     "ORDER BY o.billing_last_name, o.billing_first_name ";
 
