@@ -163,10 +163,6 @@ function uc_buyingclub_download_check_out_list($ordering_period_id) {
     $sheet->setCellValueByColumnAndRow(0, $row, $new_order_id);
     $sheet->setCellValueByColumnAndRow(1, $row, $obj->last);
     $sheet->setCellValueByColumnAndRow(2, $row, $obj->first);
-    $sheet->setCellValueByColumnAndRow(3, $row, _uc_buyingclub_download_check_out_list_get_subtotal($obj->order_id));
-    $sheet->setCellValueByColumnAndRow(4, $row, 0);
-    $sheet->setCellValueByColumnAndRow(5, $row, '=D'.$row.'+E'.$row);
-    $sheet->setCellValueByColumnAndRow(7, $row, $obj->first .' '. $obj->last);
     $new_order_id++;
     $row++;
   }
